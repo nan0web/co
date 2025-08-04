@@ -1,0 +1,30 @@
+{
+	"name": "@nan0web/co",
+	"version": "1.0.0",
+	"description": "Communication starts here with a simple Message.",
+	"main": "src/index.js",
+	"type": "module",
+	"scripts": {
+		"test": "node --test",
+		"precommit": "npm test",
+		"prepush": "npm test",
+		"prepare": "husky"
+	},
+	"keywords": [
+		"nan0",
+		"data",
+		"types",
+		"utilities",
+		"object",
+		"array",
+		"validation",
+		"format",
+		"parser"
+	],
+	"author": "ЯRаСлав YaRaSLove <support@yaro.page>",
+	"license": "ISC",
+	"packageManager": "pnpm@10.11.0",
+	"devDependencies": {
+		"husky": "^9.1.7"
+	}
+}
