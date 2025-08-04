@@ -7,7 +7,7 @@ describe("CommandMessage class", () => {
 		const cmd = new CommandMessage()
 		assert.deepStrictEqual(cmd.args, [])
 		assert.deepStrictEqual(cmd.opts, {})
-		assert.strictEqual(cmd.body, "1")
+		assert.strictEqual(cmd.body, "")
 	})
 
 	it("should create instance with provided values", () => {
