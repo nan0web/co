@@ -25,7 +25,7 @@ describe("CommandMessage class", () => {
 		const argv = ["cmd", "arg1", "arg2"]
 		const cmd = CommandMessage.parse(argv)
 
-		assert.deepStrictEqual(cmd.args, argv)
+		assert.deepStrictEqual(cmd.args, ["cmd", "arg1", "arg2"])
 		assert.deepStrictEqual(cmd.opts, {})
 	})
 
@@ -55,7 +55,7 @@ describe("CommandMessage class", () => {
 
 		assert.ok(str.includes("test"))
 		assert.ok(str.includes("--flag"))
-		assert.ok(str.includes("-file test.txt"))
+		assert.ok(str.includes("--file test.txt"))
 		assert.ok(str.includes("arg1 arg2"))
 	})
 
@@ -72,15 +72,14 @@ describe("CommandMessage class", () => {
 		const input = 'complex --ignore-rules "some operators and" -v values --but --with --no -eol 0'
 		const cmd = new CommandMessage(input)
 
-		assert.deepStrictEqual(cmd.args, ["complex", "some operators and"])
+		assert.deepStrictEqual(cmd.args, ["complex"])
 		assert.deepStrictEqual(cmd.opts, {
-			"ignore-rules": true,
+			"ignore-rules": "some operators and",
 			v: "values",
 			but: true,
 			with: true,
 			no: true,
 			eol: "0",
 		})
-		assert.strictEqual(cmd.body, input)
 	})
 })

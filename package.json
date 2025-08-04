@@ -11,15 +11,10 @@
 		"prepare": "husky"
 	},
 	"keywords": [
-		"nan0",
-		"data",
-		"types",
-		"utilities",
-		"object",
-		"array",
-		"validation",
-		"format",
-		"parser"
+		"communication",
+		"message",
+		"messaging",
+		"nan0web"
 	],
 	"author": "ЯRаСлав YaRaSLove <support@yaro.page>",
 	"license": "ISC",
