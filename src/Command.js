@@ -8,11 +8,13 @@ import CommandOption from "./CommandOption.js"
  * @property {string} [help] - Command help
  * @property {object} [options] - Command options
  * @property {object} [arguments] - Command arguments
+ * @property {Array<Command>} [subcommands] - Subcommands
+ * @property {string} [usage] - Custom usage string
  */
 
 /**
  * Base Command class
- * Provides a simple CLI command interface similar to Python's click
+ * Provides a robust CLI command interface following best practices
  */
 class Command {
 	/** @type {string} */
@@ -21,77 +23,114 @@ class Command {
 	/** @type {string} */
 	help
 
+	/** @type {string} */
+	usage
+
 	/** @type {Map<string, CommandOption>} */
 	options
 
 	/** @type {Map<string, CommandOption>} */
 	arguments
 
+	/** @type {Map<string, Command>} */
+	subcommands
+
+	/** @type {Map<string, string>} */
+	aliases
+
 	/**
 	 * Create a new Command instance
-	 * @param {CommandConfig} config - Command configuration or name
+	 * @param {CommandConfig} config - Command configuration
 	 */
 	constructor(config = {}) {
-		// Handle constructor with name and help as separate arguments
-		if (typeof config === "string") {
-			this.name = config
-			this.help = ""
-			this.options = new Map()
-			this.arguments = new Map()
-			return
-		}
-
 		const {
 			name = "",
 			help = "",
+			usage = "",
 			options = {},
 			arguments: args = {},
+			subcommands = []
 		} = config
 
 		this.name = name
 		this.help = help
+		this.usage = usage
 		this.options = new Map()
 		this.arguments = new Map()
+		this.subcommands = new Map()
+		this.aliases = new Map()
 
 		// Convert options configuration to CommandOption instances
 		Object.entries(options).forEach(([name, optConfig]) => {
 			if (Array.isArray(optConfig)) {
 				optConfig.unshift(name)
-			} else if (typeof optConfig === 'object' && optConfig !== null) {
+			} else if ("object" === typeof optConfig && optConfig !== null) {
 				optConfig.name = name
 			}
-			this.options.set(name, CommandOption.from(optConfig))
+			const option = CommandOption.from(optConfig)
+			this.options.set(name, option)
+
+			// Handle aliases
+			if (option.alias) {
+				this.aliases.set(option.alias, name)
+			}
 		})
 
 		// Convert arguments configuration to CommandOption instances
 		Object.entries(args).forEach(([name, argConfig]) => {
 			if (Array.isArray(argConfig)) {
 				argConfig.unshift(name)
-			} else if (typeof argConfig === 'object' && argConfig !== null) {
+			} else if ("object" === typeof argConfig && argConfig !== null) {
 				argConfig.name = name
 			}
 			this.arguments.set(name, CommandOption.from(argConfig))
 		})
+
+		// Add subcommands
+		subcommands.forEach(subcmd => this.addSubcommand(subcmd))
+
+		this.init()
+	}
+
+	init() {
+		// Add built-in help flag
+		if (!this.options.has("help")) {
+			this.addOption("help", Boolean, false, "Show help", "h")
+		}
+		// Add built-in version flag (assuming version exists)
+		if (!this.options.has("version")) {
+			this.addOption("version", Boolean, false, "Show version", "V")
+		}
 	}
 
 	/**
 	 * Add an option to the command
 	 * @param {string} name - Option name
 	 * @param {Function} type - Option type
-	 * @param {any} defaultValue - Default value for the option
+	 * @param {any} def - Default value for the option
 	 * @param {string} help - Option help
+	 * @param {string} [alias] - Short alias for the option
 	 * @returns {Command} - This command instance
 	 */
-	addOption(name, type, defaultValue = null, help = "") {
+	addOption(name, type, def = null, help = "", alias = "") {
 		this.options.set(name, new CommandOption({
 			name,
 			type,
-			defaultValue,
-			help: help
+			def,
+			help,
+			alias
 		}))
+		if (alias) {
+			this.aliases.set(alias, name)
+		}
 		return this
 	}
 
+	/**
+	 * Returns the option by its name.
+	 * @param {string} name
+	 * @returns {CommandOption | undefined}
+	 */
 	getOption(name) {
 		return this.options.get(name)
 	}
@@ -100,17 +139,27 @@ class Command {
 	 * Add an argument to the command
 	 * @param {string} name - Argument name
 	 * @param {Function} type - Argument type
-	 * @param {any} defaultValue - Default value for the argument
+	 * @param {any} def - Default value for the argument
 	 * @param {string} help - Argument help
 	 * @returns {Command} - This command instance
 	 */
-	addArgument(name, type, defaultValue = null, help = "") {
+	addArgument(name, type, def = null, help = "") {
 		this.arguments.set(name, new CommandOption({
 			name,
 			type,
-			defaultValue,
-			help: help
+			def,
+			help
 		}))
+		return this
+	}
+
+	/**
+	 * Add a subcommand to the command
+	 * @param {Command} subcommand - Subcommand instance
+	 * @returns {Command} - This command instance
+	 */
+	addSubcommand(subcommand) {
+		this.subcommands.set(subcommand.name, subcommand)
 		return this
 	}
 
@@ -122,39 +171,55 @@ class Command {
 	parse(argv) {
 		const msg = CommandMessage.parse(argv)
 
-		// Process options with type conversion
+		// Check for subcommands first
+		if (msg.args.length > 0 && this.subcommands.has(msg.args[0])) {
+			const subcmdName = msg.args[0]
+			if (this.subcommands.has(subcmdName)) {
+				const subcmd = this.subcommands.get(subcmdName)
+				// @ts-ignore
+				return subcmd.parse(msg.args.slice(1))
+			}
+		}
+
+		// Process options with type conversion and defaults
 		const opts = { ...msg.opts }
+
+		// Resolve aliases
+		Object.keys(opts).forEach(key => {
+			if (this.aliases.has(key)) {
+				const realName = String(this.aliases.get(key))
+				opts[realName] = opts[key]
+				delete opts[key]
+			}
+		})
+
 		this.options.forEach((option, name) => {
 			if (!(name in opts)) {
-				// Check if defaultValue is in meta object
-				if (option.meta && 'default' in option.meta) {
-					opts[name] = option.meta.default
-				} else {
-					opts[name] = option.defaultValue
-				}
+				opts[name] = option.getDefault()
 			} else {
 				// Perform type conversion
 				opts[name] = this.convertValue(opts[name], option.type, name)
 			}
 		})
 
-		// Process arguments with type conversion
+		// Process arguments with type conversion and validation
 		const args = []
 		const argEntries = [...this.arguments.entries()]
+		const requiredArgs = argEntries.filter(([_, arg]) => !arg.isOptional())
+
+		// Validate required arguments
+		if (msg.args.length < requiredArgs.length) {
+			throw new CommandError(`Missing required arguments. Expected: ${requiredArgs.length}, Got: ${msg.args.length}`)
+		}
 
 		argEntries.forEach(([argName, arg], index) => {
 			if (msg.args.length > index) {
 				args[index] = this.convertValue(msg.args[index], arg.type, argName)
 			} else if (argName === "*") {
-				// Rest arguments
+				// Rest arguments – copy any remaining raw values
 				args.push(...msg.args.slice(index))
 			} else {
-				// Check if defaultValue is in meta object
-				if (arg.meta && 'default' in arg.meta) {
-					args[index] = arg.meta.default
-				} else {
-					args[index] = arg.defaultValue
-				}
+				args[index] = arg.getDefault()
 			}
 		})
 
@@ -162,6 +227,25 @@ class Command {
 			args: args.filter(arg => arg !== undefined),
 			opts
 		})
+	}
+
+	/**
+	 * Run the built-in help logic.
+	 * Returns the help string; callers may print it or otherwise use it.
+	 * @returns {string}
+	 */
+	runHelp() {
+		return this.generateHelp()
+	}
+
+	/**
+	 * Determine whether a function can be used as a constructor.
+	 * @param {Function} fn - Function to test.
+	 * @returns {boolean} True if callable with `new`, false otherwise.
+	 */
+	isConstructible(fn) {
+		// Classes and constructor functions have a non-empty prototype.
+		return typeof fn === "function" && fn.prototype && fn.prototype !== Object.prototype
 	}
 
 	/**
@@ -173,44 +257,60 @@ class Command {
 	 */
 	convertValue(value, type, name) {
 		if (type === Boolean) {
+			// Handle explicit false values
 			return value !== "false" && value !== false
 		} else if (type === Number) {
-			return Number(value)
+			const num = Number(value)
+			if (Number.isNaN(num)) {
+				throw new CommandError(`Invalid number for ${name}: ${value}`, {
+					providedValue: value
+				})
+			}
+			return num
 		} else if (type === String) {
 			return String(value)
 		} else if (Array.isArray(type)) {
 			// Enum validation
 			if (!type.includes(value)) {
-				throw new CommandError(`Invalid value for ${name}: ${value}`, {
+				throw new CommandError(`Invalid value for ${name}: ${value}\nValid values: ${type.join(', ')}`, {
 					validValues: type,
 					providedValue: value
 				})
 			}
 			return value
-		} else if (typeof type === 'function' && type.name) {
+		} else if (typeof type === "function" && type.name) {
 			// Custom class conversion
-			if (type.from) {
+			// @ts-ignore
+			if (typeof type.from === "function") {
 				try {
+					// @ts-ignore
 					return type.from(value)
 				} catch (err) {
-					throw new CommandError(`Failed to parse ${name}: ${err.message}`, {
+					throw new CommandError(`Failed to parse ${name}: ${err instanceof Error ? err.message : String(err)}`, {
 						value,
 						type: type.name,
-						error: err.message
+						error: err instanceof Error ? err.message : String(err)
 					})
 				}
-			} else if (type.fromString) {
+				// @ts-ignore
+			} else if (typeof type.fromString === "function") {
 				try {
+					// @ts-ignore
 					return type.fromString(value)
 				} catch (err) {
-					throw new CommandError(`Failed to parse ${name}: ${err.message}`, {
+					throw new CommandError(`Failed to parse ${name}: ${err instanceof Error ? err.message : String(err)}`, {
 						value,
 						type: type.name,
-						error: err.message
+						error: err instanceof Error ? err.message : String(err)
 					})
 				}
 			} else {
-				return new type(value)
+				// If the function is a constructor, instantiate it, otherwise invoke it.
+				if (this.isConstructible(type)) {
+					// @ts-ignore
+					return new type(value)
+				}
+				return type(value)
 			}
 		}
 		return value
@@ -218,66 +318,84 @@ class Command {
 
 	/**
 	 * Show help information
-	 * @returns {string} - Help text
+	 * @returns {string}
 	 */
 	generateHelp() {
-		const lines = []
+		const rows = []
 
-		if (this.help) {
-			lines.push(this.help)
-			lines.push("")
-		}
-
-		if (this.options.size > 0) {
-			lines.push("Options:")
-			this.options.forEach(option => {
-				const typeInfo = this.getTypeInfo(option.type)
-				// Check if defaultValue is in meta object
-				let defaultValue = option.defaultValue
-				if (option.meta && 'default' in option.meta) {
-					defaultValue = option.meta.default
-				}
-				const defaultValueText = defaultValue !== null ? ` (default: ${defaultValue})` : ""
-				lines.push(`  --${option.name} <${typeInfo}>  ${option.help}${defaultValueText}`)
-			})
-			lines.push("")
-		}
-
-		if (this.arguments.size > 0) {
-			lines.push("Arguments:")
-			this.arguments.forEach(arg => {
-				if (arg.name === "*") {
-					const typeInfo = this.getTypeInfo(arg.type)
-					lines.push(`  [${arg.name}] <${typeInfo}>  ${arg.help}`)
+		// Usage line
+		if (this.usage) {
+			rows.push(`Usage: ${this.usage}`)
+		} else {
+			let usageStr = this.name
+			// Add options
+			this.options.forEach(opt => {
+				if (opt.def !== false) { // Don't show boolean flags with false default
+					usageStr += ` [--${opt.name}]`
 				} else {
-					const typeInfo = this.getTypeInfo(arg.type)
-					// Check if defaultValue is in meta object
-					let defaultValue = arg.defaultValue
-					if (arg.meta && 'default' in arg.meta) {
-						defaultValue = arg.meta.default
-					}
-					const defaultValueText = defaultValue !== null ? ` (default: ${defaultValue})` : ""
-					lines.push(`  <${arg.name}> <${typeInfo}>  ${arg.help}${defaultValueText}`)
+					usageStr += ` [--${opt.name}]`
 				}
 			})
-			lines.push("")
+			// Add arguments
+			this.arguments.forEach(arg => {
+				if (arg.isOptional()) {
+					usageStr += ` [${arg.name}]`
+				} else {
+					usageStr += ` <${arg.name}>`
+				}
+			})
+			rows.push(`Usage: ${usageStr}`)
 		}
 
-		return lines.join("\n")
+		rows.push("")
+
+		// Description
+		if (this.help) {
+			rows.push(this.help)
+			rows.push("")
+		}
+
+		// Arguments section
+		if (this.arguments.size > 0) {
+			rows.push("Arguments:")
+			this.arguments.forEach(arg => {
+				const argObj = arg.toObject()
+				rows.push(`  ${arg.isOptional() ? '[' : '<'}${argObj.name}${arg.isOptional() ? ']' : '>'} ${argObj.help}${argObj.defaultText}`)
+			})
+			rows.push("")
+		}
+
+		// Options section
+		if (this.options.size > 0) {
+			rows.push("Options:")
+			this.options.forEach(opt => {
+				const optObj = opt.toObject()
+				let flagStr = `  --${optObj.name}`
+				if (optObj.alias) {
+					flagStr += `, -${optObj.alias}`
+				}
+				rows.push(`${flagStr} ${optObj.help}${optObj.defaultText}`)
+			})
+			rows.push("")
+		}
+
+		// Subcommands section
+		if (this.subcommands.size > 0) {
+			rows.push("Subcommands:")
+			this.subcommands.forEach(subcmd => {
+				rows.push(`  ${subcmd.name} - ${subcmd.help || 'No description'}`)
+			})
+			rows.push("")
+		}
+
+		return rows.join("\n")
 	}
 
-	/**
-	 * Get type information for display
-	 * @param {Function|Array} type - Type to get info for
-	 * @returns {string} - Type information string
-	 */
-	getTypeInfo(type) {
-		if (Array.isArray(type)) {
-			return "enum"
-		} else if (typeof type === 'function') {
-			return type.name || typeof type
-		}
-		return typeof type
+	toString() {
+		return [
+			this.constructor.name,
+			this.generateHelp(),
+		].join("\n")
 	}
 }
 

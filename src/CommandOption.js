@@ -1,5 +1,3 @@
-import CommandError from "./CommandError.js"
-
 /**
  * Command option class
  * Represents a single command option (flag, option, or argument)
@@ -12,127 +10,107 @@ class CommandOption {
 	type
 
 	/** @type {any} */
-	defaultValue
+	def
 
 	/** @type {string} */
 	help
 
-	/** @type {object} */
-	meta
+	/** @type {string} */
+	alias
+
+	/** @type {boolean} */
+	required
 
 	/**
 	 * Create a new CommandOption instance
-	 * @param {object} config - Command option configuration
-	 * @param {string} config.name - Option name
-	 * @param {Function|Array} config.type - Option type
-	 * @param {any} config.defaultValue - Default value for the option
-	 * @param {string} config.help - Option help
-	 * @param {object} [config.meta={}] - Additional metadata
+	 * @param {object} config - Option configuration
+	 * @param {string} [config.name] - Option name
+	 * @param {Function|Array} [config.type] - Option type
+	 * @param {any} [config.def] - Default value
+	 * @param {string} [config.help] - Help text
+	 * @param {string} [config.alias] - Short alias
+	 * @param {boolean} [config.required] - Is argument required
 	 */
 	constructor(config = {}) {
-		if (Array.isArray(config)) {
-			const helpIndex = config.length - 1
-			const metaIndex = config.length - 2
-			const typeInfo = CommandOption.getTypeFrom(config[1] || "")
-			
-			// Check if the last element is an object (meta) or just help text
-			let meta = {}
-			let help = ""
-			
-			if (typeof config[helpIndex] === 'object' && config[helpIndex] !== null) {
-				meta = config[helpIndex] || {}
-				help = config[helpIndex - 1] || ""
-			} else {
-				help = config[helpIndex] || ""
-				if (typeof config[metaIndex] === 'object' && config[metaIndex] !== null) {
-					meta = config[metaIndex] || {}
-				}
-			}
-			
-			config = {
-				name: config[0] || "",
-				type: typeInfo.type,
-				defaultValue: ('default' in meta) ? meta.default : typeInfo.value,
-				help: help,
-				meta: meta
-			}
-		}
 		const {
 			name = "",
 			type = String,
-			defaultValue = null,
+			def = null,
 			help = "",
-			meta = {}
+			alias = "",
+			required = false
 		} = config
 
 		this.name = name
 		this.type = type
-		this.defaultValue = defaultValue
+		this.def = def
 		this.help = help
-		this.meta = meta
+		this.alias = alias
+		this.required = required
+	}
+
+	/**
+	 * Get default value for the option
+	 * @returns {any} - Default value
+	 */
+	getDefault() {
+		return this.def
+	}
+
+	/**
+	 * Check if argument is optional
+	 * @returns {boolean}
+	 */
+	isOptional() {
+		return this.def !== null || this.required === false
 	}
 
 	/**
 	 * Convert option to object representation
-	 * @returns {object} - Object with all option properties
+	 * @returns {object} - Object with option properties
 	 */
 	toObject() {
+		const typeInfo = Array.isArray(this.type)
+			? this.type.join('|')
+			: this.type.name || typeof this.type
+
+		const defaultText = this.def !== null
+			? ` (default: ${this.def})`
+			: ''
+
 		return {
 			name: this.name,
 			type: this.type,
-			defaultValue: this.defaultValue,
+			typeInfo,
+			def: this.def,
+			defaultText,
 			help: this.help,
-			meta: this.meta
+			alias: this.alias
 		}
 	}
 
 	/**
-	 * @param {object} input
-	 * @returns {CommandOption}
+	 * Create CommandOption from various input formats
+	 * @param {string|Array|object} input - Input to create option from
+	 * @returns {CommandOption} - CommandOption instance
 	 */
 	static from(input) {
 		if (input instanceof CommandOption) return input
-		return new CommandOption(input)
-	}
 
-	/**
-	 * Get type information from a value
-	 * @param {any} value - The value to analyze
-	 * @returns {object} - Object with type and value properties
-	 */
-	static getTypeFrom(value) {
-		if (String === value) {
-			return { type: String, value: "" }
+		if (typeof input === "string") {
+			return new CommandOption({ name: input, type: String, def: "", help: "" })
 		}
-		else if (Boolean === value) {
-			return { type: Boolean, value: false }
+
+		if (Array.isArray(input)) {
+			const [name, type, def, help, alias] = input
+			return new CommandOption({ name, type, def, help, alias })
 		}
-		else if (Number === value) {
-			return { type: Number, value: 0 }
+
+		if (typeof input === "object" && input !== null) {
+			return new CommandOption(input)
 		}
-		else if ("boolean" === typeof value) {
-			return { type: Boolean, value }
-		}
-		else if ("number" === typeof value) {
-			return { type: Number, value }
-		}
-		else if ("string" === typeof value) {
-			return { type: String, value }
-		}
-		else if ("object" === typeof value) {
-			if (null === value) {
-				return { type: Object, value: null }
-			}
-			if (Array.isArray(value)) {
-				return { type: Array, value }
-			}
-			return { type: value.constructor, value }
-		}
-		else if ("function" === typeof value) {
-			return { type: value, value: undefined }
-		} else {
-			throw new CommandError("Cannot detect a type from a value", value)
-		}
+
+		throw new Error(`Invalid input for CommandOption.from(): ${input}`)
 	}
 }
 

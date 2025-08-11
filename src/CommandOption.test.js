@@ -54,49 +54,40 @@ describe('CommandOption class', () => {
 			const option = new CommandOption()
 			assert.strictEqual(option.name, '')
 			assert.strictEqual(option.type, String)
-			assert.strictEqual(option.defaultValue, null)
+			assert.strictEqual(option.def, null)
 			assert.strictEqual(option.help, '')
-			assert.deepStrictEqual(option.meta, {})
-		})
-
-		it('should create instance from array config', () => {
-			const option = new CommandOption(['test', 42, 'Help text'])
-			assert.strictEqual(option.name, 'test')
-			assert.strictEqual(option.type, Number)
-			assert.strictEqual(option.defaultValue, 42)
-			assert.strictEqual(option.help, 'Help text')
-			assert.deepStrictEqual(option.meta, {})
+			assert.equal(option.required, false)
 		})
 
 		it('should create instance from object config', () => {
 			const config = {
 				name: 'verbose',
 				type: Boolean,
-				defaultValue: false,
+				def: false,
 				help: 'Enable verbose output',
-				meta: { required: true }
+				required: true,
 			}
 			const option = new CommandOption(config)
 			assert.strictEqual(option.name, 'verbose')
 			assert.strictEqual(option.type, Boolean)
-			assert.strictEqual(option.defaultValue, false)
+			assert.strictEqual(option.def, false)
 			assert.strictEqual(option.help, 'Enable verbose output')
-			assert.deepStrictEqual(option.meta, { required: true })
+			assert.equal(option.required, true)
 		})
 
 		it('should handle Complex type in constructor', () => {
 			const config = {
 				name: 'complex',
 				type: Complex,
-				defaultValue: new Complex({ value: 'default', count: 1 }),
+				def: new Complex({ value: 'default', count: 1 }),
 				help: 'A complex value'
 			}
 			const option = new CommandOption(config)
 			assert.strictEqual(option.name, 'complex')
 			assert.strictEqual(option.type, Complex)
-			assert.ok(option.defaultValue instanceof Complex)
-			assert.strictEqual(option.defaultValue.value, 'default')
-			assert.strictEqual(option.defaultValue.count, 1)
+			assert.ok(option.def instanceof Complex)
+			assert.strictEqual(option.def.value, 'default')
+			assert.strictEqual(option.def.count, 1)
 			assert.strictEqual(option.help, 'A complex value')
 		})
 
@@ -104,15 +95,15 @@ describe('CommandOption class', () => {
 			const config = {
 				name: 'validatedComplex',
 				type: ComplexWithValidation,
-				defaultValue: new ComplexWithValidation({ value: 'validated', count: 5 }),
+				def: new ComplexWithValidation({ value: 'validated', count: 5 }),
 				help: 'A validated complex value'
 			}
 			const option = new CommandOption(config)
 			assert.strictEqual(option.name, 'validatedComplex')
 			assert.strictEqual(option.type, ComplexWithValidation)
-			assert.ok(option.defaultValue instanceof ComplexWithValidation)
-			assert.strictEqual(option.defaultValue.value, 'validated')
-			assert.strictEqual(option.defaultValue.count, 5)
+			assert.ok(option.def instanceof ComplexWithValidation)
+			assert.strictEqual(option.def.value, 'validated')
+			assert.strictEqual(option.def.count, 5)
 			assert.strictEqual(option.help, 'A validated complex value')
 		})
 	})
@@ -122,9 +113,9 @@ describe('CommandOption class', () => {
 			const config = {
 				name: 'output',
 				type: String,
-				defaultValue: 'stdout',
+				def: 'stdout',
 				help: 'Output destination',
-				meta: { alias: 'o' }
+				alias: 'o'
 			}
 			const option = new CommandOption(config)
 			const obj = option.toObject()
@@ -132,9 +123,11 @@ describe('CommandOption class', () => {
 			assert.deepStrictEqual(obj, {
 				name: 'output',
 				type: String,
-				defaultValue: 'stdout',
+				typeInfo: "String",
+				def: 'stdout',
+				defaultText: " (default: stdout)",
 				help: 'Output destination',
-				meta: { alias: 'o' }
+				alias: 'o'
 			})
 		})
 
@@ -143,16 +136,15 @@ describe('CommandOption class', () => {
 			const option = new CommandOption({
 				name: 'data',
 				type: Complex,
-				defaultValue: complexValue,
+				def: complexValue,
 				help: 'Complex data structure'
 			})
 
 			const obj = option.toObject()
 			assert.strictEqual(obj.name, 'data')
 			assert.strictEqual(obj.type, Complex)
-			assert.strictEqual(obj.defaultValue, complexValue)
+			assert.strictEqual(obj.def, complexValue)
 			assert.strictEqual(obj.help, 'Complex data structure')
-			assert.deepStrictEqual(obj.meta, {})
 		})
 	})
 
@@ -167,40 +159,31 @@ describe('CommandOption class', () => {
 			const config = {
 				name: 'input',
 				type: String,
-				defaultValue: '',
+				def: '',
 				help: 'Input file path'
 			}
 			const option = CommandOption.from(config)
 			assert.ok(option instanceof CommandOption)
 			assert.strictEqual(option.name, 'input')
 			assert.strictEqual(option.type, String)
-			assert.strictEqual(option.defaultValue, '')
+			assert.strictEqual(option.def, '')
 			assert.strictEqual(option.help, 'Input file path')
-		})
-
-		it('should create new instance from array config', () => {
-			const option = CommandOption.from(['mode', 'development', 'Application mode'])
-			assert.ok(option instanceof CommandOption)
-			assert.strictEqual(option.name, 'mode')
-			assert.strictEqual(option.type, String)
-			assert.strictEqual(option.defaultValue, 'development')
-			assert.strictEqual(option.help, 'Application mode')
 		})
 
 		it('should handle Complex type in from method', () => {
 			const complexConfig = {
 				name: 'complexData',
 				type: Complex,
-				defaultValue: new Complex({ value: 'data', count: 10 }),
+				def: new Complex({ value: 'data', count: 10 }),
 				help: 'Complex data with string and count'
 			}
 			const option = CommandOption.from(complexConfig)
 			assert.ok(option instanceof CommandOption)
 			assert.strictEqual(option.name, 'complexData')
 			assert.strictEqual(option.type, Complex)
-			assert.ok(option.defaultValue instanceof Complex)
-			assert.strictEqual(option.defaultValue.value, 'data')
-			assert.strictEqual(option.defaultValue.count, 10)
+			assert.ok(option.def instanceof Complex)
+			assert.strictEqual(option.def.value, 'data')
+			assert.strictEqual(option.def.count, 10)
 			assert.strictEqual(option.help, 'Complex data with string and count')
 		})
 
@@ -208,16 +191,16 @@ describe('CommandOption class', () => {
 			const validatedComplexConfig = {
 				name: 'validatedData',
 				type: ComplexWithValidation,
-				defaultValue: new ComplexWithValidation({ value: 'secure', count: 7 }),
+				def: new ComplexWithValidation({ value: 'secure', count: 7 }),
 				help: 'Validated complex data'
 			}
 			const option = CommandOption.from(validatedComplexConfig)
 			assert.ok(option instanceof CommandOption)
 			assert.strictEqual(option.name, 'validatedData')
 			assert.strictEqual(option.type, ComplexWithValidation)
-			assert.ok(option.defaultValue instanceof ComplexWithValidation)
-			assert.strictEqual(option.defaultValue.value, 'secure')
-			assert.strictEqual(option.defaultValue.count, 7)
+			assert.ok(option.def instanceof ComplexWithValidation)
+			assert.strictEqual(option.def.value, 'secure')
+			assert.strictEqual(option.def.count, 7)
 			assert.strictEqual(option.help, 'Validated complex data')
 		})
 
@@ -225,21 +208,19 @@ describe('CommandOption class', () => {
 			const configWithMeta = {
 				name: 'config',
 				type: Object,
-				defaultValue: { debug: true },
+				def: { debug: true },
 				help: 'Configuration object',
-				meta: {
-					alias: 'c',
-					required: false,
-					hidden: true
-				}
+				alias: 'c',
+				required: false,
 			}
 			const option = CommandOption.from(configWithMeta)
 			assert.ok(option instanceof CommandOption)
-			assert.deepStrictEqual(option.meta, {
-				alias: 'c',
-				required: false,
-				hidden: true
-			})
+			assert.equal(option.name, configWithMeta.name)
+			assert.equal(option.type, configWithMeta.type)
+			assert.deepEqual(option.def, configWithMeta.def)
+			assert.equal(option.help, configWithMeta.help)
+			assert.equal(option.alias, configWithMeta.alias)
+			assert.equal(option.required, configWithMeta.required)
 		})
 	})
 
@@ -248,7 +229,7 @@ describe('CommandOption class', () => {
 			const option = new CommandOption({
 				name: 'count',
 				type: Number,
-				defaultValue: 0
+				def: 0
 			})
 			assert.strictEqual(option.type, Number)
 		})
@@ -257,7 +238,7 @@ describe('CommandOption class', () => {
 			const option = new CommandOption({
 				name: 'items',
 				type: Array,
-				defaultValue: []
+				def: []
 			})
 			assert.strictEqual(option.type, Array)
 		})
@@ -266,7 +247,7 @@ describe('CommandOption class', () => {
 			const option = new CommandOption({
 				name: 'complex',
 				type: Complex,
-				defaultValue: new Complex()
+				def: new Complex()
 			})
 			assert.strictEqual(option.type, Complex)
 		})
@@ -275,7 +256,7 @@ describe('CommandOption class', () => {
 			const option = new CommandOption({
 				name: 'validated',
 				type: ComplexWithValidation,
-				defaultValue: new ComplexWithValidation({ count: 1 })
+				def: new ComplexWithValidation({ count: 1 })
 			})
 			assert.strictEqual(option.type, ComplexWithValidation)
 		})

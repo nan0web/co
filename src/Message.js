@@ -10,7 +10,9 @@ class Message {
 
 	/**
 	 * Create a new Message instance
-	 * @param {any} body - Message body
+	 * @param {object} input
+	 * @param {any} [input.body] - Message body.
+	 * @param {Date} [input.time] - Created at time.
 	 */
 	constructor(input = {}) {
 		if ("string" === typeof input) {

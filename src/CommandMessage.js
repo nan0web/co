@@ -2,6 +2,7 @@ import Message from "./Message.js"
 
 /**
  * Command message class
+ * Enhanced to handle equals syntax and validate inputs
  */
 class CommandMessage extends Message {
 	/** @type {string[]} */
@@ -12,9 +13,10 @@ class CommandMessage extends Message {
 
 	/**
 	 * Create a new CommandMessage instance
-	 * @param {object | string} input - Command message properties
-	 * @param {string[]} input.args - Command arguments
-	 * @param {object} input.opts - Command options
+	 * @param {object} input - Command message properties
+	 * @param {*} [input.body] - Message body, used only to store original input if it is string
+	 * @param {string[]} [input.args] - Command arguments
+	 * @param {object} [input.opts] - Command options
 	 */
 	constructor(input = {}) {
 		if ("string" === typeof input) {
@@ -44,13 +46,13 @@ class CommandMessage extends Message {
 			// Handle quoted strings properly using more robust parsing
 			const parts = []
 			let i = 0
-			const str = argv
-			
+			const str = argv.trim()
+
 			while (i < str.length) {
 				// Skip whitespace
 				while (i < str.length && str[i] === ' ') i++
 				if (i >= str.length) break
-				
+
 				// Check for quotes
 				if (str[i] === '"' || str[i] === "'") {
 					const quote = str[i]
@@ -60,6 +62,8 @@ class CommandMessage extends Message {
 					if (i < str.length) {
 						parts.push(str.slice(start, i))
 						i++
+					} else {
+						throw new Error(`Unmatched quote in argument: ${argv}`)
 					}
 				} else {
 					// Regular argument
@@ -68,10 +72,13 @@ class CommandMessage extends Message {
 					parts.push(str.slice(start, i))
 				}
 			}
-			
+
 			argv = parts
 		}
 
+		/**
+		 * @type {{args: string[], opts: Record<string, *>}}
+		 */
 		const result = { args: [], opts: {} }
 		let i = 0
 
@@ -79,24 +86,44 @@ class CommandMessage extends Message {
 			const curr = argv[i]
 
 			if (curr.startsWith('--')) {
-				const key = curr.slice(2)
-				// Check if next argument is a value (not another flag)
-				if (i + 1 < argv.length && !argv[i + 1].startsWith('-')) {
-					result.opts[key] = argv[i + 1]
-					i += 2
-				} else {
-					result.opts[key] = true
+				const eqIndex = curr.indexOf('=')
+				if (eqIndex > -1) {
+					// Handle --option=value syntax
+					const key = curr.slice(2, eqIndex)
+					const value = curr.slice(eqIndex + 1)
+					result.opts[key] = value
 					i++
+				} else {
+					const key = curr.slice(2)
+					// Check if next argument is a value (not another flag)
+					if (i + 1 < argv.length && !argv[i + 1].startsWith('-')) {
+						result.opts[key] = argv[i + 1]
+						i += 2
+					} else {
+						result.opts[key] = true
+						i++
+					}
 				}
 			} else if (curr.startsWith('-')) {
+				// Handle short options like -v, -abc, -o value
 				const key = curr.slice(1)
-				// Check if next argument is a value (not another flag)
-				if (i + 1 < argv.length && !argv[i + 1].startsWith('-')) {
-					result.opts[key] = argv[i + 1]
-					i += 2
-				} else {
-					result.opts[key] = true
+
+				// Check if it's a combined boolean flag like -abc
+				if (key.length > 1) {
+					// Split into individual flags
+					for (const char of key) {
+						result.opts[char] = true
+					}
 					i++
+				} else {
+					// Single short flag
+					if (i + 1 < argv.length && !argv[i + 1].startsWith('-')) {
+						result.opts[key] = argv[i + 1]
+						i += 2
+					} else {
+						result.opts[key] = true
+						i++
+					}
 				}
 			} else {
 				result.args.push(curr)
@@ -106,7 +133,6 @@ class CommandMessage extends Message {
 
 		return new CommandMessage(result)
 	}
-
 
 	/**
 	 * Convert command message to string

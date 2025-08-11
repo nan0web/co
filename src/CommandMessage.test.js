@@ -69,7 +69,7 @@ describe("CommandMessage class", () => {
 	})
 
 	it("should handle complex command string input in constructor", () => {
-		const input = 'complex --ignore-rules "some operators and" -v values --but --with --no -eol 0'
+		const input = 'complex --ignore-rules "some operators and" -v values --but --with --no -eol'
 		const cmd = new CommandMessage(input)
 
 		assert.deepStrictEqual(cmd.args, ["complex"])
@@ -79,7 +79,8 @@ describe("CommandMessage class", () => {
 			but: true,
 			with: true,
 			no: true,
-			eol: "0",
+			// -eol === -e -o -l
+			e: true, o: true, l: true,
 		})
 	})
 })

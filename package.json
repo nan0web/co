@@ -4,7 +4,9 @@
 	"description": "Communication starts here with a simple Message.",
 	"main": "src/index.js",
 	"type": "module",
+	"types": "./types",
 	"scripts": {
+		"build": "tsc",
 		"test": "node --test",
 		"precommit": "npm test",
 		"prepush": "npm test",

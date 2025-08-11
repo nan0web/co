@@ -3,6 +3,7 @@ import assert from "node:assert"
 import Command from "./Command.js"
 import CommandError from "./CommandError.js"
 import CommandMessage from "./CommandMessage.js"
+import CommandOption from "./CommandOption.js"
 
 class Complex {
 	value
@@ -68,11 +69,11 @@ describe("Command class", () => {
 		const verboseFlag = cmd.getOption("verbose")
 
 		assert.strictEqual(helpFlag.type, Boolean)
-		assert.strictEqual(helpFlag.defaultValue, false)
+		assert.strictEqual(helpFlag.def, false)
 		assert.strictEqual(helpFlag.help, "Show help")
 
 		assert.strictEqual(verboseFlag.type, Boolean)
-		assert.strictEqual(verboseFlag.defaultValue, true)
+		assert.strictEqual(verboseFlag.def, true)
 		assert.strictEqual(verboseFlag.help, "Enable verbose output")
 	})
 
@@ -81,7 +82,8 @@ describe("Command class", () => {
 		cmd.addOption("file", String, "default.txt", "Input file")
 		cmd.addOption("count", Number, 10, "Number of items")
 
-		assert.strictEqual(cmd.options.size, 2)
+		// 2 + default help & version
+		assert.strictEqual(cmd.options.size, 4)
 		assert.ok(cmd.options.has("file"))
 		assert.ok(cmd.options.has("count"))
 
@@ -89,11 +91,11 @@ describe("Command class", () => {
 		const countOption = cmd.getOption("count")
 
 		assert.strictEqual(fileOption.type, String)
-		assert.strictEqual(fileOption.defaultValue, "default.txt")
+		assert.strictEqual(fileOption.def, "default.txt")
 		assert.strictEqual(fileOption.help, "Input file")
 
 		assert.strictEqual(countOption.type, Number)
-		assert.strictEqual(countOption.defaultValue, 10)
+		assert.strictEqual(countOption.def, 10)
 		assert.strictEqual(countOption.help, "Number of items")
 	})
 
@@ -102,12 +104,20 @@ describe("Command class", () => {
 			name: "parse",
 			help: "Parse with defaults",
 			options: {
-				help: [true, "Show help"], // Changed to array format with boolean default
-				verbose: [Boolean, true, "Enable verbose output", { default: true }], // Added meta with default
-				file: [String, "Input file", { default: "default.txt" }],
-				count: [Number, "Number of items", { default: 10 }],
+				help: new CommandOption(
+					{ name: "help", alias: "h", def: false, type: !0, help: "Show help" }
+				),
+				verbose: new CommandOption(
+					{ name: "verbose", alias: "v", def: true, type: !0, help: "Enable verbose output" }
+				),
+				file: new CommandOption(
+					{ name: "file", alias: "f", def: "default.txt", type: "", help: "Input file" }
+				),
+				count: new CommandOption(
+					{ name: "count", alias: "c", def: 10, type: 0, help: "Number of items" }
+				),
 			},
-			arguments: { "*": [String, "Files to process"] }
+			arguments: { "*": new CommandOption({ name: "Files", type: "", help: "Files to process" }) }
 		})
 
 		const msg = cmd.parse(["test", "--help", "--file", "input.txt"])
@@ -116,9 +126,10 @@ describe("Command class", () => {
 		assert.deepStrictEqual(msg.args, ["test"])
 		assert.deepStrictEqual(msg.opts, {
 			help: true,
-			verbose: true,  // Default value from meta
+			verbose: true,
+			version: false,
 			file: "input.txt",
-			count: 10  // Default value from meta
+			count: 10,
 		})
 	})
 
@@ -133,7 +144,8 @@ describe("Command class", () => {
 		const helpText = cmd.generateHelp() // Changed method call
 		const lines = helpText.split("\n")
 
-		assert.ok(lines[0].includes("Test command"))
+		assert.ok(lines[0].includes("Usage: test"))
+		assert.ok(lines[2].includes("Test command"))
 		assert.ok(lines.some(line => line.includes("Options:")))
 		assert.ok(lines.some(line => line.includes("--help")))
 		assert.ok(lines.some(line => line.includes("--file")))
@@ -160,6 +172,7 @@ describe("Command class", () => {
 
 		assert.ok(msg instanceof Object)
 		// Fixed expected result - args should contain the Complex instance and file names
+		assert.fail("Complex object as an argument or option must be implemented properly")
 		assert.deepStrictEqual(msg.args, [complexValue, "file1.txt", "file2.txt"])
 		assert.deepStrictEqual(msg.opts, {
 			debug: false // Default value
