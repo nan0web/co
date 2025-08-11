@@ -1,6 +1,7 @@
 import CommandMessage from "./CommandMessage.js"
 import CommandError from "./CommandError.js"
 import CommandOption from "./CommandOption.js"
+import Logger from "@nan0web/log"
 
 /**
  * @typedef {Object} CommandConfig
@@ -358,33 +359,48 @@ class Command {
 		// Arguments section
 		if (this.arguments.size > 0) {
 			rows.push("Arguments:")
+			const arr = []
 			this.arguments.forEach(arg => {
 				const argObj = arg.toObject()
-				rows.push(`  ${arg.isOptional() ? '[' : '<'}${argObj.name}${arg.isOptional() ? ']' : '>'} ${argObj.help}${argObj.defaultText}`)
+				arr.push([
+					`  ${arg.isOptional() ? '[' : '<'}${argObj.name}${arg.isOptional() ? ']' : '>'}`,
+					argObj.help + argObj.defaultText
+				])
+				// rows.push(`  ${arg.isOptional() ? '[' : '<'}${argObj.name}${arg.isOptional() ? ']' : '>'} ${argObj.help}${argObj.defaultText}`)
 			})
+			const logger = new Logger()
+			rows.push(...logger.table(arr, [], { padding: 3 }))
 			rows.push("")
 		}
 
 		// Options section
 		if (this.options.size > 0) {
 			rows.push("Options:")
+			const arr = []
 			this.options.forEach(opt => {
 				const optObj = opt.toObject()
 				let flagStr = `  --${optObj.name}`
 				if (optObj.alias) {
 					flagStr += `, -${optObj.alias}`
 				}
-				rows.push(`${flagStr} ${optObj.help}${optObj.defaultText}`)
+				arr.push([flagStr, optObj.help + optObj.defaultText])
+				// rows.push(`${flagStr} ${optObj.help}${optObj.defaultText}`)
 			})
+			const logger = new Logger()
+			rows.push(...logger.table(arr, [], { padding: 3 }))
 			rows.push("")
 		}
 
 		// Subcommands section
 		if (this.subcommands.size > 0) {
 			rows.push("Subcommands:")
+			const arr = []
 			this.subcommands.forEach(subcmd => {
-				rows.push(`  ${subcmd.name} - ${subcmd.help || 'No description'}`)
+				arr.push([`  ${subcmd.name}`, ` - ${subcmd.help || 'No description'}`])
+				// rows.push(`  ${subcmd.name} - ${subcmd.help || 'No description'}`)
 			})
+			const logger = new Logger()
+			rows.push(...logger.table(arr, [], { padding: 3 }))
 			rows.push("")
 		}
 

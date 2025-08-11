@@ -23,5 +23,8 @@ describe("Command built‑in help flag", () => {
 		assert.ok(typeof helpText === "string")
 		assert.ok(helpText.includes("Demo command"))
 		assert.ok(helpText.includes("--verbose"))
+		assert.ok(helpText.includes("  --verbose       Verbose output (default: false)   "))
+		assert.ok(helpText.includes("  --help, -h      Show help (default: false)        "))
+		assert.ok(helpText.includes("  --version, -V   Show version (default: false)     "))
 	})
 })
