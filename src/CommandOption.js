@@ -65,6 +65,11 @@ class CommandOption {
 		return this.def !== null || this.required === false
 	}
 
+	#escapeDefault(def) {
+		if ("string" === typeof def) return ['"', def, '"'].join("")
+		return def
+	}
+
 	/**
 	 * Convert option to object representation
 	 * @returns {object} - Object with option properties
@@ -75,7 +80,7 @@ class CommandOption {
 			: this.type.name || typeof this.type
 
 		const defaultText = this.def !== null
-			? ` (default: ${this.def})`
+			? ` (default: ${this.#escapeDefault(this.def)})`
 			: ''
 
 		return {

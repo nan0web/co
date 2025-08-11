@@ -55,4 +55,5 @@ declare class CommandOption {
      * @returns {object} - Object with option properties
      */
     toObject(): object;
+    #private;
 }

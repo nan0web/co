@@ -125,7 +125,7 @@ describe('CommandOption class', () => {
 				type: String,
 				typeInfo: "String",
 				def: 'stdout',
-				defaultText: " (default: stdout)",
+				defaultText: ' (default: "stdout")',
 				help: 'Output destination',
 				alias: 'o'
 			})
