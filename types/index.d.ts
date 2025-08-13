@@ -1,7 +1,8 @@
 export default Message;
+import Command from "./Command/Command.js";
+import CommandError from "./Command/CommandError.js";
+import CommandOption from "./Command/CommandOption.js";
+import CommandMessage from "./Command/CommandMessage.js";
+import Contact from "./Contact.js";
 import Message from "./Message.js";
-import Command from "./Command.js";
-import CommandError from "./CommandError.js";
-import CommandOption from "./CommandOption.js";
-import CommandMessage from "./CommandMessage.js";
-export { Message, Command, CommandError, CommandOption, CommandMessage };
+export { Command, CommandError, CommandOption, CommandMessage, Contact, Message };
