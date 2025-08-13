@@ -1,7 +1,8 @@
+import { isConstructible } from "@nan0web/types"
+import Logger from "@nan0web/log"
 import CommandMessage from "./CommandMessage.js"
 import CommandError from "./CommandError.js"
 import CommandOption from "./CommandOption.js"
-import Logger from "@nan0web/log"
 
 /**
  * @typedef {Object} CommandConfig
@@ -18,6 +19,10 @@ import Logger from "@nan0web/log"
  * Provides a robust CLI command interface following best practices
  */
 class Command {
+	static Message = CommandMessage
+	static Error = CommandError
+	static Option = CommandOption
+
 	/** @type {string} */
 	name
 
@@ -93,6 +98,10 @@ class Command {
 		this.init()
 	}
 
+	/**
+	 * Initialize default options and arguments
+	 * @returns {void}
+	 */
 	init() {
 		// Add built-in help flag
 		if (!this.options.has("help")) {
@@ -129,8 +138,8 @@ class Command {
 
 	/**
 	 * Returns the option by its name.
-	 * @param {string} name
-	 * @returns {CommandOption | undefined}
+	 * @param {string} name - Option name
+	 * @returns {CommandOption | undefined} - Command option or undefined if not found
 	 */
 	getOption(name) {
 		return this.options.get(name)
@@ -142,14 +151,16 @@ class Command {
 	 * @param {Function} type - Argument type
 	 * @param {any} def - Default value for the argument
 	 * @param {string} help - Argument help
+	 * @param {boolean} required - Is argument required
 	 * @returns {Command} - This command instance
 	 */
-	addArgument(name, type, def = null, help = "") {
+	addArgument(name, type, def = null, help = "", required = false) {
 		this.arguments.set(name, new CommandOption({
 			name,
 			type,
 			def,
-			help
+			help,
+			required
 		}))
 		return this
 	}
@@ -168,17 +179,19 @@ class Command {
 	 * Parse arguments and populate options
 	 * @param {string[] | string} argv - Command line arguments
 	 * @returns {CommandMessage} - Parsed command message
+	 * @throws {CommandError} - If parsing fails
 	 */
 	parse(argv) {
 		const msg = CommandMessage.parse(argv)
 
-		// Check for subcommands first
+		// Handle subcommands - preserve the subcommand name in args
 		if (msg.args.length > 0 && this.subcommands.has(msg.args[0])) {
 			const subcmdName = msg.args[0]
-			if (this.subcommands.has(subcmdName)) {
-				const subcmd = this.subcommands.get(subcmdName)
-				// @ts-ignore
-				return subcmd.parse(msg.args.slice(1))
+			const subcmd = this.subcommands.get(subcmdName)
+			if (subcmd) {
+				msg.add(subcmd.parse(argv))
+			} else {
+				throw new CommandError(["Cannot find a sub-command", subcmdName].join(": "), msg)
 			}
 		}
 
@@ -206,25 +219,28 @@ class Command {
 		// Process arguments with type conversion and validation
 		const args = []
 		const argEntries = [...this.arguments.entries()]
-		const requiredArgs = argEntries.filter(([_, arg]) => !arg.isOptional())
+		const requiredArgs = argEntries.filter(([_, arg]) => arg.required)
 
 		// Validate required arguments
-		if (msg.args.length < requiredArgs.length) {
+		if (!requiredArgs.every(([name]) => msg.args.includes(name))) {
 			throw new CommandError(`Missing required arguments. Expected: ${requiredArgs.length}, Got: ${msg.args.length}`)
 		}
 
 		argEntries.forEach(([argName, arg], index) => {
-			if (msg.args.length > index) {
-				args[index] = this.convertValue(msg.args[index], arg.type, argName)
-			} else if (argName === "*") {
+			if (argName === "*") {
 				// Rest arguments – copy any remaining raw values
 				args.push(...msg.args.slice(index))
-			} else {
+			}
+			else if (msg.args.length > index) {
+				args[index] = this.convertValue(msg.args[index], arg.type, argName)
+			}  else {
 				args[index] = arg.getDefault()
 			}
 		})
 
 		return new CommandMessage({
+			...msg,
+			body: argv,
 			args: args.filter(arg => arg !== undefined),
 			opts
 		})
@@ -233,20 +249,10 @@ class Command {
 	/**
 	 * Run the built-in help logic.
 	 * Returns the help string; callers may print it or otherwise use it.
-	 * @returns {string}
+	 * @returns {string} - Help information
 	 */
 	runHelp() {
 		return this.generateHelp()
-	}
-
-	/**
-	 * Determine whether a function can be used as a constructor.
-	 * @param {Function} fn - Function to test.
-	 * @returns {boolean} True if callable with `new`, false otherwise.
-	 */
-	isConstructible(fn) {
-		// Classes and constructor functions have a non-empty prototype.
-		return typeof fn === "function" && fn.prototype && fn.prototype !== Object.prototype
 	}
 
 	/**
@@ -255,6 +261,7 @@ class Command {
 	 * @param {Function|Array} type - Target type (Function constructor, Array for enum)
 	 * @param {string} name - Name for error reporting
 	 * @returns {any} - Converted value
+	 * @throws {CommandError} - If conversion fails
 	 */
 	convertValue(value, type, name) {
 		if (type === Boolean) {
@@ -307,7 +314,7 @@ class Command {
 				}
 			} else {
 				// If the function is a constructor, instantiate it, otherwise invoke it.
-				if (this.isConstructible(type)) {
+				if (isConstructible(type)) {
 					// @ts-ignore
 					return new type(value)
 				}
@@ -319,7 +326,7 @@ class Command {
 
 	/**
 	 * Show help information
-	 * @returns {string}
+	 * @returns {string} - Help text
 	 */
 	generateHelp() {
 		const rows = []
@@ -366,10 +373,9 @@ class Command {
 					`  ${arg.isOptional() ? '[' : '<'}${argObj.name}${arg.isOptional() ? ']' : '>'}`,
 					argObj.help + argObj.defaultText
 				])
-				// rows.push(`  ${arg.isOptional() ? '[' : '<'}${argObj.name}${arg.isOptional() ? ']' : '>'} ${argObj.help}${argObj.defaultText}`)
 			})
 			const logger = new Logger()
-			rows.push(...logger.table(arr, [], { padding: 3 }))
+			rows.push(...logger.table(arr, [], { padding: 3, silent: true }))
 			rows.push("")
 		}
 
@@ -384,10 +390,9 @@ class Command {
 					flagStr += `, -${optObj.alias}`
 				}
 				arr.push([flagStr, optObj.help + optObj.defaultText])
-				// rows.push(`${flagStr} ${optObj.help}${optObj.defaultText}`)
 			})
 			const logger = new Logger()
-			rows.push(...logger.table(arr, [], { padding: 3 }))
+			rows.push(...logger.table(arr, [], { padding: 3, silent: true }))
 			rows.push("")
 		}
 
@@ -397,16 +402,19 @@ class Command {
 			const arr = []
 			this.subcommands.forEach(subcmd => {
 				arr.push([`  ${subcmd.name}`, ` - ${subcmd.help || 'No description'}`])
-				// rows.push(`  ${subcmd.name} - ${subcmd.help || 'No description'}`)
 			})
 			const logger = new Logger()
-			rows.push(...logger.table(arr, [], { padding: 3 }))
+			rows.push(...logger.table(arr, [], { padding: 3, silent: true }))
 			rows.push("")
 		}
 
 		return rows.join("\n")
 	}
 
+	/**
+	 * Convert command to string representation
+	 * @returns {string} - String representation of command
+	 */
 	toString() {
 		return [
 			this.constructor.name,

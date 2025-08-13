@@ -1,15 +1,21 @@
+import Contact from "./Contact.js"
+
 import Message from "./Message.js"
-import CommandMessage from "./CommandMessage.js"
-import Command from "./Command.js"
-import CommandError from "./CommandError.js"
-import CommandOption from "./CommandOption.js"
+
+import Command from "./Command/Command.js"
+import CommandError from "./Command/CommandError.js"
+import CommandMessage from "./Command/CommandMessage.js"
+import CommandOption from "./Command/CommandOption.js"
 
 export {
-	Message,
 	Command,
 	CommandError,
 	CommandOption,
 	CommandMessage,
+
+	Contact,
+
+	Message,
 }
 
 export default Message

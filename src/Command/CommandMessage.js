@@ -1,4 +1,4 @@
-import Message from "./Message.js"
+import Message from "../Message.js"
 
 /**
  * Command message class
@@ -11,12 +11,16 @@ class CommandMessage extends Message {
 	/** @type {object} */
 	opts
 
+	/** @type {CommandMessage[]} */
+	children
+
 	/**
 	 * Create a new CommandMessage instance
 	 * @param {object} input - Command message properties
 	 * @param {*} [input.body] - Message body, used only to store original input if it is string
 	 * @param {string[]} [input.args] - Command arguments
 	 * @param {object} [input.opts] - Command options
+	 * @param {object[]} [input.children] - Subcommands in their messages, usually it is only one or zero.
 	 */
 	constructor(input = {}) {
 		if ("string" === typeof input) {
@@ -30,12 +34,52 @@ class CommandMessage extends Message {
 		const {
 			args = [],
 			opts = {},
+			children = [],
 		} = input
 		super(input)
 		this.args = args.map(String)
 		this.opts = opts
+		this.children = children.map(c => CommandMessage.from(c))
 	}
 
+	add(msg) {
+		this.children.push(CommandMessage.from(msg))
+	}
+
+	/**
+	 * Convert command message to string
+	 * @returns {string} - String representation
+	 */
+	toString() {
+		const optsStr = Object.entries(this.opts)
+			.map(([key, value]) => {
+				if (value === true) {
+					return `--${key}`
+				} else {
+					// Quote string values that contain spaces
+					const valStr = String(value).includes(' ') ? `"${value}"` : value
+					return `--${key} ${valStr}`
+				}
+			})
+			.join(" ")
+
+		const argsStr = this.args.map(arg => {
+			// Quote string arguments that contain spaces
+			const argStr = String(arg)
+			return argStr.includes(' ') ? `"${argStr}"` : argStr
+		}).join(" ")
+
+		return `${optsStr} ${argsStr}`.trim()
+	}
+	/**
+	 * Create CommandMessage instance from body
+	 * @param {any} input - body to create message from
+	 * @returns {CommandMessage} - Message instance
+	 */
+	static from(input) {
+		if (input instanceof CommandMessage) return input
+		return new CommandMessage(input)
+	}
 	/**
 	 * Parse command line arguments into CommandMessage
 	 * @param {string[] | string} argv - Command line arguments or a command string
@@ -132,32 +176,6 @@ class CommandMessage extends Message {
 		}
 
 		return new CommandMessage(result)
-	}
-
-	/**
-	 * Convert command message to string
-	 * @returns {string} - String representation
-	 */
-	toString() {
-		const optsStr = Object.entries(this.opts)
-			.map(([key, value]) => {
-				if (value === true) {
-					return `--${key}`
-				} else {
-					// Quote string values that contain spaces
-					const valStr = String(value).includes(' ') ? `"${value}"` : value
-					return `--${key} ${valStr}`
-				}
-			})
-			.join(" ")
-
-		const argsStr = this.args.map(arg => {
-			// Quote string arguments that contain spaces
-			const argStr = String(arg)
-			return argStr.includes(' ') ? `"${argStr}"` : argStr
-		}).join(" ")
-
-		return `${optsStr} ${argsStr}`.trim()
 	}
 }
 

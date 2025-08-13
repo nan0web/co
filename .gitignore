@@ -1,4 +1,7 @@
-chat/
 coverage/
 node_modules/
-me.md
+
+# Chat
+/chat/
+/llm/
+/me.md

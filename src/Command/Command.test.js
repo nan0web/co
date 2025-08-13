@@ -141,7 +141,7 @@ describe("Command class", () => {
 		cmd.addOption("help", Boolean, false, "Show help")
 		cmd.addOption("file", String, "default.txt", "Input file")
 
-		const helpText = cmd.generateHelp() // Changed method call
+		const helpText = cmd.generateHelp()
 		const lines = helpText.split("\n")
 
 		assert.ok(lines[0].includes("Usage: test"))
@@ -151,16 +151,16 @@ describe("Command class", () => {
 		assert.ok(lines.some(line => line.includes("--file")))
 	})
 
-	it.todo("should parse complex arguments", () => {
+	it.todo("should handle complex argument types", () => {
 		const command = new Command({
 			name: "test",
 			help: "Test command with complex arguments",
 			options: {
-				debug: [Boolean, "Show debugging logs"],
-				"input-file": [String, "Input file", { alias: "i" }],
+				debug: [Boolean, false, "Show debugging logs"],
+				"input-file": [String, "default.txt", "Input file", { alias: "i" }],
 			},
 			arguments: {
-				complex: [Complex, "Complex config, provide path to file with a config or its string encoded value"],
+				complex: [Complex, new Complex(), "Complex config, provide path to file with a config or its string encoded value"],
 				"*": [String, "Files to process"]
 			}
 		})
@@ -170,16 +170,47 @@ describe("Command class", () => {
 		const argv = ["test", complexValue.toString(), "file1.txt", "file2.txt"]
 		const msg = command.parse(argv)
 
-		assert.ok(msg instanceof Object)
-		// Fixed expected result - args should contain the Complex instance and file names
-		assert.fail("Complex object as an argument or option must be implemented properly")
-		assert.deepStrictEqual(msg.args, [complexValue, "file1.txt", "file2.txt"])
+		assert.ok(msg instanceof CommandMessage)
+		assert.ok(msg.args[0] instanceof Complex)
+		assert.strictEqual(msg.args[0].count, 5)
+		assert.strictEqual(msg.args[0].value, "test")
+		assert.deepStrictEqual(msg.args.slice(1), ["file1.txt", "file2.txt"])
 		assert.deepStrictEqual(msg.opts, {
-			debug: false // Default value
+			debug: false,
+			"input-file": "default.txt",
+			help: false,
+			version: false
+		})
+	})
+
+	it("should handle subcommands", () => {
+		const subCommand = new Command({
+			name: "sub",
+			help: "Subcommand",
+			options: {
+				"help": new CommandOption({
+					name: "help", type: Boolean, def: false, help: "Show help",
+				})
+			}
 		})
 
-		// Test parsing with ComplexWithValidation that should throw
-		const invalidArgv = ["test", "--valid", new Complex({ value: "test", count: -1 }).toString()]
-		// Skip this test since we don't have a "valid" option defined
+		const mainCommand = new Command({
+			name: "main",
+			help: "Main command",
+			subcommands: [subCommand],
+			options: {
+				"help": new CommandOption({
+					name: "help", type: Boolean, def: false, help: "Show main help",
+				})
+			}
+		})
+
+		const msg = mainCommand.parse(["sub", "--help"])
+		assert.ok(msg instanceof CommandMessage)
+		assert.ok(msg.children[0] instanceof CommandMessage)
+		const sub = msg.children[0]
+		assert.deepStrictEqual(msg.args, [])
+		assert.deepStrictEqual(sub.args, [])
+		assert.deepStrictEqual(msg.opts, { help: true, version: false })
 	})
 })

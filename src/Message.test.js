@@ -1,8 +1,17 @@
-import { describe, it } from "node:test"
+import { describe, it, before, after } from "node:test"
 import assert from "node:assert"
 import Message from "./Message.js"
+import { NoLogger } from "@nan0web/log"
 
 describe("Message class", () => {
+	let originalConsole
+	before(() => {
+		originalConsole = console
+		console = new NoLogger({ level: NoLogger.LEVELS.debug })
+	})
+	after(() => {
+		console = originalConsole
+	})
 	it("should create instance with default values", () => {
 		const msg = new Message()
 		assert.strictEqual(msg.body, "")
@@ -50,5 +59,17 @@ describe("Message class", () => {
 		const returned = Message.from(original)
 
 		assert.strictEqual(original, returned)
+	})
+	/**
+	 * @docs
+	 * ## Usage
+	 * ### Basic Message
+	 */
+	it("Messages contain body and time when they were created", () => {
+		// import { Message } from '@nan0web/co'
+
+		const msg = new Message('Hello world')
+		console.log(String(msg)) // 2023-04-01T10:00:00 Hello world
+		assert.equal(String(msg), msg.time.toISOString().split(".")[0] + " Hello world")
 	})
 })

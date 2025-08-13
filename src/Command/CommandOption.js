@@ -59,15 +59,20 @@ class CommandOption {
 
 	/**
 	 * Check if argument is optional
-	 * @returns {boolean}
+	 * @returns {boolean} - True if argument is optional
 	 */
 	isOptional() {
 		return this.def !== null || this.required === false
 	}
 
+	/**
+	 * Escape default value for display
+	 * @param {any} def - Default value
+	 * @returns {string} - Escaped default value
+	 */
 	#escapeDefault(def) {
 		if ("string" === typeof def) return ['"', def, '"'].join("")
-		return def
+		return String(def)
 	}
 
 	/**
@@ -98,6 +103,7 @@ class CommandOption {
 	 * Create CommandOption from various input formats
 	 * @param {string|Array|object} input - Input to create option from
 	 * @returns {CommandOption} - CommandOption instance
+	 * @throws {Error} - If input format is invalid
 	 */
 	static from(input) {
 		if (input instanceof CommandOption) return input
