@@ -1,20 +1,41 @@
 import { typeOf } from "@nan0web/types"
 
+/**
+ * Contact handling class
+ * Parses and formats contact information with specific URI schemes.
+ *
+ * @example
+ * const email = new Contact({ type: Contact.EMAIL, value: "test@example.com" })
+ * console.log(email.toString()) // "mailto:test@example.com"
+ */
 class Contact {
+	/** @type {string} */
 	static ADDRESS = "address:"
+	/** @type {string} */
 	static EMAIL = "mailto:"
 
+	/** @type {string} */
 	static FACEBOOK = "https://www.facebook.com/"
+	/** @type {string} */
 	static INSTAGRAM = "https://www.instagram.com/"
+	/** @type {string} */
 	static LINKEDIN = "https://www.linkedin.com/in/"
+	/** @type {string} */
 	static SIGNAL = "https://signal.me/#p/"
+	/** @type {string} */
 	static SKYPE = "skype:"
+	/** @type {string} */
 	static TELEGRAM = "https://t.me/"
+	/** @type {string} */
 	static VIBER = "viber://chat?number="
+	/** @type {string} */
 	static WHATSAPP = "https://wa.me/"
+	/** @type {string} */
 	static X = "https://x.com/"
 
+	/** @type {string} */
 	static TELEPHONE = "tel:"
+	/** @type {string} */
 	static URL = "//"
 
 	/** @type {string} */
@@ -23,9 +44,11 @@ class Contact {
 	value
 
 	/**
-	 * @param {object} input
-	 * @param {string} [input.type=Contact.ADDRESS]
-	 * @param {string} [input.value=""]
+	 * Create a Contact instance
+	 *
+	 * @param {object} [input={}]
+	 * @param {string} [input.type=Contact.ADDRESS] - One of the static URI prefixes
+	 * @param {string} [input.value=""] - The raw value without the prefix
 	 */
 	constructor(input = {}) {
 		if ("string" === typeof input) {
@@ -38,15 +61,24 @@ class Contact {
 		this.type = String(type)
 		this.value = String(value)
 	}
+
+	/**
+	 * Convert the contact to its string representation.
+	 *
+	 * @returns {string} URI string (e.g. `mailto:test@example.com` or `address:123 Main St`)
+	 */
 	toString() {
 		if ([Contact.URL].includes(this.type)) {
 			return this.value
 		}
 		return this.type + this.value
 	}
+
 	/**
-	 * @param {string} input
-	 * @returns {Contact}
+	 * Parse a raw string into a {@link Contact} instance.
+	 *
+	 * @param {string} input - Raw contact string (may include a known prefix or be a plain email/phone/url)
+	 * @returns {Contact} Parsed contact object
 	 */
 	static parse(input) {
 		input = String(input)
@@ -74,8 +106,12 @@ class Contact {
 		}
 		return new Contact({ type, value })
 	}
+
 	/**
-	 * @param {object} input
+	 * Factory helper – returns the argument unchanged if it is already a {@link Contact},
+	 * otherwise creates a new instance.
+	 *
+	 * @param {any} input - Contact instance or raw data suitable for the constructor
 	 * @returns {Contact}
 	 */
 	static from(input) {
