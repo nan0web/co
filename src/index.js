@@ -1,3 +1,4 @@
+import Chat from "./Chat.js"
 import Contact from "./Contact.js"
 
 import Message from "./Message.js"
@@ -8,6 +9,8 @@ import CommandMessage from "./Command/CommandMessage.js"
 import CommandOption from "./Command/CommandOption.js"
 
 export {
+	Chat,
+
 	Command,
 	CommandError,
 	CommandOption,

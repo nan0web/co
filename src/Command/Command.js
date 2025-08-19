@@ -189,7 +189,9 @@ class Command {
 			const subcmdName = msg.args[0]
 			const subcmd = this.subcommands.get(subcmdName)
 			if (subcmd) {
-				msg.add(subcmd.parse(argv))
+				const subMsg = subcmd.parse(msg.toString())
+				subMsg.args = subMsg.args.filter(a => a !== subcmdName)
+				msg.add(subMsg)
 			} else {
 				throw new CommandError(["Cannot find a sub-command", subcmdName].join(": "), msg)
 			}
@@ -222,8 +224,8 @@ class Command {
 		const requiredArgs = argEntries.filter(([_, arg]) => arg.required)
 
 		// Validate required arguments
-		if (!requiredArgs.every(([name]) => msg.args.includes(name))) {
-			throw new CommandError(`Missing required arguments. Expected: ${requiredArgs.length}, Got: ${msg.args.length}`)
+		if (requiredArgs.length > 0 && !requiredArgs.every(([name]) => msg.args.includes(name))) {
+			throw new CommandError(`Missing required arguments. Expected: ${requiredArgs.map(([name]) => name).join(', ')}`, msg)
 		}
 
 		argEntries.forEach(([argName, arg], index) => {

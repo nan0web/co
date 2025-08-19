@@ -2,6 +2,12 @@
 
 Communication starts here with a simple Message.
 
+## International Documentation 
+
+Available translations:
+- [Українська](./docs/README.uk.md)
+- [Ελληνικά](./docs/README.el.md)
+
 ## Description
 
 The `@nan0web/co` package provides a minimal yet powerful foundation for message-based communication systems and contact handling.  
@@ -15,6 +21,22 @@ Core classes:
 - `Contact` — parses and represents contact information with specific URI schemes.
 
 These classes are perfect for building parsers, CLI tools, communication protocols, message validation layers, and contact data management.
+
+## Philosophy of Communication
+
+True communication begins with understanding and resonating with others. 
+
+Inspired by ancient wisdom:
+- **Ra** (Sun, Light) — represents the energy and clarity we bring
+- **Zoom** (movement, change) — reflects the dynamic nature of exchange
+- **Om** (universal sound, unity) — embodies harmony in communication
+
+This trinity forms the foundation of meaningful interaction:
+1. Send a clear message (**Ra** - light)
+2. Allow space for response (**Zoom** - movement)  
+3. Listen with openness (**Om** - unity)
+
+Every conversation can create either resonance (harmony, understanding) or dissonance (conflict, misunderstanding). Choose resonance and open infinite universe of creation.
 
 ## Installation
 
@@ -92,9 +114,8 @@ github // { type: Contact.URL, value: "https://github.com" }
 
 `CommandOption` can be created from:
 
-* **Array syntax** – `[name, defaultValue, help, meta?]`  
-  *`meta`* can contain `alias`, `required`, etc.
-* **Object syntax** – `{ name, type, defaultValue, help, meta }`
+* **Array syntax** – `[name, type, defaultValue, help, alias?]`  
+* **Object syntax** – `{ name, type, defaultValue, help, alias }`
 
 Both syntaxes are automatically transformed into a `CommandOption` instance.
 
@@ -107,9 +128,9 @@ import { Command } from '@nan0web/co'
 
 const initCmd = new Command({
   name: 'init',
-  help: 'Initialize a new project',
-  options: {
-    name: "version", alias: "V", type: Boolean, def: false, help: "Show version"
+  help: 'Initialize a new project',  
+  arguments: {
+    project: [String, '', 'Project name']
   }
 })
 
@@ -117,15 +138,11 @@ const mainCmd = new Command({
   name: 'mycli',
   help: 'My CLI tool',
   subcommands: [initCmd]
-})
+})  
 
 // Parse with subcommand
-const msg = mainCmd.parse(['init', '-V'])
-const sub = msg.children[0]
-if (sub) {
-  sub.opts // { version: true }
-  sub.args // ["init"]
-}
+const msg = mainCmd.parse(['init', 'my-project'])
+console.log(msg.children[0].args) // ['my-project']
 ```
 
 ### Errors
@@ -134,11 +151,11 @@ All parsing and conversion errors are thrown as `CommandError`. The error contai
 
 ```js
 try {
-  cmd.parse(['example', '--count', '-1'])
+  cmd.parse(['example', '--count', 'abc']) 
 } catch (err) {
   if (err instanceof CommandError) {
-    console.error(err.message)   // "Invalid value for count: -1"
-    console.error(err.data)      // { validValues: [...], providedValue: '-1' }
+    console.error(err.message) // "Invalid number for count: abc"  
+    console.error(err.data)    // { providedValue: 'abc' }
   }
 }
 ```
@@ -148,18 +165,17 @@ try {
 ### Command System
 
 - `--help` / `-h` to display help
-- `--version` / `-V` to display version
-- Native support for complex data types in arguments (via `fromString` method)
+- `--version` / `-V` to display version  
+- Native support for complex data types in arguments (via static `fromString` method)
 - Automatic argument validation and error handling
 
-### Contact Types
+### Contact Parsing 
 
-- Email auto-detection (e.g. `test@example.com`)
-- Telephony auto-detection (e.g. `+1234567890`)
-- Social media format (e.g. `https://x.com/user` → X.com, `https://wa.me/+12125551234`)
-- URL normalization 
-- Custom contact type definitions
-
+- Email auto-detection and normalization (e.g. `test@example.com` → `mailto:test@example.com`)
+- Telephone number detection (e.g. `+1234567890`) 
+- Social media contact parsing (Facebook, Instagram, LinkedIn, Signal, Skype, Telegram, Viber, WhatsApp, X)
+- URL detection and normalization
+- Postal address parsing as fallback
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md)

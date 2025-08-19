@@ -98,7 +98,6 @@ class CommandOption {
 			alias: this.alias
 		}
 	}
-
 	/**
 	 * Create CommandOption from various input formats
 	 * @param {string|Array|object} input - Input to create option from

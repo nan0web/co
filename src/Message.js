@@ -47,7 +47,7 @@ class Message {
 	 * @returns {string} - String with timestamp and body
 	 */
 	toString() {
-		return `${this.time.toISOString().split(".")[0]} ${this.body}`
+		return `${this.time.toISOString()} ${this.body}`
 	}
 
 	/**

@@ -67,8 +67,8 @@ describe("Command argument strict validation", () => {
 
 		const msg = cmd.parse(["watch", "20", "input.txt"])
 		const sub = msg.children[0]
-		assert.strictEqual(sub.args[1], "20")
-		assert.strictEqual(sub.args[2], "input.txt")
+		assert.strictEqual(sub.args[0], "20")
+		assert.strictEqual(sub.args[1], "input.txt")
 	})
 
 	it.todo("handles complex argument types properly", () => {

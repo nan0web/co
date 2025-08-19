@@ -70,6 +70,6 @@ describe("Message class", () => {
 
 		const msg = new Message('Hello world')
 		console.log(String(msg)) // 2023-04-01T10:00:00 Hello world
-		assert.equal(String(msg), msg.time.toISOString().split(".")[0] + " Hello world")
+		assert.equal(String(msg), msg.time.toISOString() + " Hello world")
 	})
 })

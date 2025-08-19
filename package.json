@@ -8,6 +8,7 @@
 	"scripts": {
 		"build": "tsc",
 		"test": "node --test",
+		"test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/**/*.js",
 		"precommit": "npm test",
 		"prepush": "npm test",
 		"prepare": "husky"
@@ -22,7 +23,7 @@
 	"license": "ISC",
 	"packageManager": "pnpm@10.11.0",
 	"devDependencies": {
-		"@nan0web/logger": "link:../log",
+		"@nan0web/log": "workspace:*",
 		"husky": "^9.1.7"
 	}
 }

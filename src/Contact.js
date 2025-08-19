@@ -1,5 +1,3 @@
-import { typeOf } from "@nan0web/types"
-
 /**
  * Contact handling class
  * Parses and formats contact information with specific URI schemes.
@@ -84,7 +82,7 @@ class Contact {
 		input = String(input)
 		let value = input
 		let type
-		if (typeOf(Number)(input)) {
+		if ("number" === typeof input) {
 			type = String(type)
 		}
 		type = Object.values(Contact).find(str => input.startsWith(str)) ?? ""
