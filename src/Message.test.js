@@ -68,7 +68,7 @@ describe("Message class", () => {
 	it("Messages contain body and time when they were created", () => {
 		// import { Message } from '@nan0web/co'
 
-		const msg = new Message('Hello world')
+		const msg = Message.from('Hello world')
 		console.log(String(msg)) // 2023-04-01T10:00:00 Hello world
 		assert.equal(String(msg), msg.time.toISOString() + " Hello world")
 	})

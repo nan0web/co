@@ -15,9 +15,6 @@ class Message {
 	 * @param {Date} [input.time] - Created at time.
 	 */
 	constructor(input = {}) {
-		if ("string" === typeof input) {
-			input = { body: input }
-		}
 		const {
 			body = "",
 			time = Date.now(),
@@ -57,6 +54,7 @@ class Message {
 	 */
 	static from(input) {
 		if (input instanceof Message) return input
+		if ("string" === typeof input) return new Message({ body: input })
 		return new Message(input)
 	}
 }

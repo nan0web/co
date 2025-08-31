@@ -9,6 +9,10 @@ export type CommandConfig = {
      */
     help?: string | undefined;
     /**
+     * - Logger instance
+     */
+    logger?: Logger | undefined;
+    /**
      * - Command options
      */
     options?: object;
@@ -29,6 +33,7 @@ export type CommandConfig = {
  * @typedef {Object} CommandConfig
  * @property {string} [name] - Command name
  * @property {string} [help] - Command help
+ * @property {Logger} [logger] - Logger instance
  * @property {object} [options] - Command options
  * @property {object} [arguments] - Command arguments
  * @property {Array<Command>} [subcommands] - Subcommands
@@ -51,6 +56,8 @@ declare class Command {
     name: string;
     /** @type {string} */
     help: string;
+    /** @type {Logger} */
+    logger: Logger;
     /** @type {string} */
     usage: string;
     /** @type {Map<string, CommandOption>} */
@@ -61,6 +68,8 @@ declare class Command {
     subcommands: Map<string, Command>;
     /** @type {Map<string, string>} */
     aliases: Map<string, string>;
+    /** @returns {typeof CommandMessage} */
+    get Message(): typeof CommandMessage;
     /**
      * Initialize default options and arguments
      * @returns {void}
@@ -99,6 +108,12 @@ declare class Command {
      */
     addSubcommand(subcommand: Command): Command;
     /**
+     * Returns sub command by its name.
+     * @param {string} name
+     * @returns {Command | undefined}
+     */
+    getCommand(name: string): Command | undefined;
+    /**
      * Parse arguments and populate options
      * @param {string[] | string} argv - Command line arguments
      * @returns {CommandMessage} - Parsed command message
@@ -131,6 +146,7 @@ declare class Command {
      */
     toString(): string;
 }
+import Logger from "@nan0web/log";
 import CommandOption from "./CommandOption.js";
 import CommandMessage from "./CommandMessage.js";
 import CommandError from "./CommandError.js";

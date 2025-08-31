@@ -104,7 +104,7 @@ class Chat extends Message {
 			body = String(body)
 		}
 		// Escape sequences that could be interpreted as message separators
-		return body.replace(/---\n/g, "---\\n")
+		return body.replace(/---\n/g, "--- \n")
 	}
 
 	/**

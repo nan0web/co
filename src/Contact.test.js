@@ -26,7 +26,7 @@ describe("Contact", () => {
 
 	it("Contact constructor with string input uses parse", () => {
 		const input = Contact.EMAIL + "test@example.com"
-		const contact = new Contact(input)
+		const contact = Contact.from(input)
 		assert.equal(contact.type, Contact.EMAIL)
 		assert.equal(contact.value, "test@example.com")
 		assert.equal(contact.toString(), input)

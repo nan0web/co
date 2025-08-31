@@ -5,6 +5,9 @@ import Message from "../Message.js"
  * Enhanced to handle equals syntax and validate inputs
  */
 class CommandMessage extends Message {
+	/** @type {string} */
+	name
+
 	/** @type {string[]} */
 	args
 
@@ -18,6 +21,7 @@ class CommandMessage extends Message {
 	 * Create a new CommandMessage instance
 	 * @param {object} input - Command message properties
 	 * @param {*} [input.body] - Message body, used only to store original input if it is string
+	 * @param {string} [input.name] - Command name
 	 * @param {string[]} [input.args] - Command arguments
 	 * @param {object} [input.opts] - Command options
 	 * @param {object[]} [input.children] - Subcommands in their messages, usually it is only one or zero.
@@ -27,21 +31,41 @@ class CommandMessage extends Message {
 			const msg = CommandMessage.parse(input)
 			input = {
 				body: input,
+				name: msg.name,
 				args: msg.args,
 				opts: msg.opts,
 			}
 		}
 		const {
+			name = "",
 			args = [],
 			opts = {},
 			children = [],
 		} = input
 		super(input)
+		this.name = String(name)
 		this.args = args.map(String)
 		this.opts = opts
 		this.children = children.map(c => CommandMessage.from(c))
 	}
 
+	/**
+	 * @returns {string} Sub command name if exists otherwise empty string.
+	 */
+	get subCommand() {
+		return this.children[0]?.name || ""
+	}
+
+	/**
+	 * @returns {CommandMessage} Sub command message.
+	 */
+	get subCommandMessage() {
+		return this.children[0] || ""
+	}
+
+	/**
+	 * @param {any} msg
+	 */
 	add(msg) {
 		this.children.push(CommandMessage.from(msg))
 	}
@@ -126,6 +150,18 @@ class CommandMessage extends Message {
 		const result = { args: [], opts: {} }
 		let i = 0
 
+		const setOption = (key, value) => {
+			if (undefined === result.opts[key]) {
+				result.opts[key] = value
+			}
+			else {
+				if (!Array.isArray(result.opts[key])) {
+					result.opts[key] = [result.opts[key]]
+				}
+				result.opts[key].push(value)
+			}
+		}
+
 		while (i < argv.length) {
 			const curr = argv[i]
 
@@ -135,16 +171,16 @@ class CommandMessage extends Message {
 					// Handle --option=value syntax
 					const key = curr.slice(2, eqIndex)
 					const value = curr.slice(eqIndex + 1)
-					result.opts[key] = value
+					setOption(key, value)
 					i++
 				} else {
 					const key = curr.slice(2)
 					// Check if next argument is a value (not another flag)
 					if (i + 1 < argv.length && !argv[i + 1].startsWith('-')) {
-						result.opts[key] = argv[i + 1]
+						setOption(key, argv[i + 1])
 						i += 2
 					} else {
-						result.opts[key] = true
+						setOption(key, true)
 						i++
 					}
 				}
@@ -156,16 +192,16 @@ class CommandMessage extends Message {
 				if (key.length > 1) {
 					// Split into individual flags
 					for (const char of key) {
-						result.opts[char] = true
+						setOption(char, true)
 					}
 					i++
 				} else {
 					// Single short flag
 					if (i + 1 < argv.length && !argv[i + 1].startsWith('-')) {
-						result.opts[key] = argv[i + 1]
+						setOption(key, argv[i + 1])
 						i += 2
 					} else {
-						result.opts[key] = true
+						setOption(key, true)
 						i++
 					}
 				}

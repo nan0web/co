@@ -20,22 +20,37 @@ declare class CommandMessage extends Message {
      * Create a new CommandMessage instance
      * @param {object} input - Command message properties
      * @param {*} [input.body] - Message body, used only to store original input if it is string
+     * @param {string} [input.name] - Command name
      * @param {string[]} [input.args] - Command arguments
      * @param {object} [input.opts] - Command options
      * @param {object[]} [input.children] - Subcommands in their messages, usually it is only one or zero.
      */
     constructor(input?: {
         body?: any;
+        name?: string | undefined;
         args?: string[] | undefined;
         opts?: object;
         children?: any[] | undefined;
     });
+    /** @type {string} */
+    name: string;
     /** @type {string[]} */
     args: string[];
     /** @type {object} */
     opts: object;
     /** @type {CommandMessage[]} */
     children: CommandMessage[];
+    /**
+     * @returns {string} Sub command name if exists otherwise empty string.
+     */
+    get subCommand(): string;
+    /**
+     * @returns {CommandMessage} Sub command message.
+     */
+    get subCommandMessage(): CommandMessage;
+    /**
+     * @param {any} msg
+     */
     add(msg: any): void;
 }
 import Message from "../Message.js";

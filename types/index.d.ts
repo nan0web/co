@@ -6,4 +6,5 @@ import CommandOption from "./Command/CommandOption.js";
 import CommandMessage from "./Command/CommandMessage.js";
 import Contact from "./Contact.js";
 import Message from "./Message.js";
-export { Chat, Command, CommandError, CommandOption, CommandMessage, Contact, Message };
+import Language from "./Language.js";
+export { Chat, Command, CommandError, CommandOption, CommandMessage, Contact, Message, Language };

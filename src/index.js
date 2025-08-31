@@ -3,6 +3,8 @@ import Contact from "./Contact.js"
 
 import Message from "./Message.js"
 
+import Language from "./Language.js"
+
 import Command from "./Command/Command.js"
 import CommandError from "./Command/CommandError.js"
 import CommandMessage from "./Command/CommandMessage.js"
@@ -19,6 +21,8 @@ export {
 	Contact,
 
 	Message,
+
+	Language,
 }
 
 export default Message

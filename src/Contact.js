@@ -49,9 +49,6 @@ class Contact {
 	 * @param {string} [input.value=""] - The raw value without the prefix
 	 */
 	constructor(input = {}) {
-		if ("string" === typeof input) {
-			input = Contact.parse(input)
-		}
 		const {
 			type = Contact.ADDRESS,
 			value = "",
@@ -114,6 +111,7 @@ class Contact {
 	 */
 	static from(input) {
 		if (input instanceof Contact) return input
+		if ("string" === typeof input) return Contact.parse(input)
 		return new this(input)
 	}
 }

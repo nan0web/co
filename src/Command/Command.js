@@ -8,6 +8,7 @@ import CommandOption from "./CommandOption.js"
  * @typedef {Object} CommandConfig
  * @property {string} [name] - Command name
  * @property {string} [help] - Command help
+ * @property {Logger} [logger] - Logger instance
  * @property {object} [options] - Command options
  * @property {object} [arguments] - Command arguments
  * @property {Array<Command>} [subcommands] - Subcommands
@@ -28,6 +29,9 @@ class Command {
 
 	/** @type {string} */
 	help
+
+	/** @type {Logger} */
+	logger
 
 	/** @type {string} */
 	usage
@@ -52,6 +56,7 @@ class Command {
 		const {
 			name = "",
 			help = "",
+			logger = new Logger(),
 			usage = "",
 			options = {},
 			arguments: args = {},
@@ -60,6 +65,7 @@ class Command {
 
 		this.name = name
 		this.help = help
+		this.logger = logger
 		this.usage = usage
 		this.options = new Map()
 		this.arguments = new Map()
@@ -96,6 +102,11 @@ class Command {
 		subcommands.forEach(subcmd => this.addSubcommand(subcmd))
 
 		this.init()
+	}
+
+	/** @returns {typeof CommandMessage} */
+	get Message() {
+		return /** @type {typeof Command} */ (this.constructor).Message
 	}
 
 	/**
@@ -176,13 +187,22 @@ class Command {
 	}
 
 	/**
+	 * Returns sub command by its name.
+	 * @param {string} name
+	 * @returns {Command | undefined}
+	 */
+	getCommand(name) {
+		return this.subcommands.get(name)
+	}
+
+	/**
 	 * Parse arguments and populate options
 	 * @param {string[] | string} argv - Command line arguments
 	 * @returns {CommandMessage} - Parsed command message
 	 * @throws {CommandError} - If parsing fails
 	 */
 	parse(argv) {
-		const msg = CommandMessage.parse(argv)
+		const msg = this.Message.parse(argv)
 
 		// Handle subcommands - preserve the subcommand name in args
 		if (msg.args.length > 0 && this.subcommands.has(msg.args[0])) {
@@ -190,6 +210,7 @@ class Command {
 			const subcmd = this.subcommands.get(subcmdName)
 			if (subcmd) {
 				const subMsg = subcmd.parse(msg.toString())
+				subMsg.name = subcmd.name
 				subMsg.args = subMsg.args.filter(a => a !== subcmdName)
 				msg.add(subMsg)
 			} else {
@@ -240,7 +261,7 @@ class Command {
 			}
 		})
 
-		return new CommandMessage({
+		return new this.Message({
 			...msg,
 			body: argv,
 			args: args.filter(arg => arg !== undefined),
@@ -376,8 +397,7 @@ class Command {
 					argObj.help + argObj.defaultText
 				])
 			})
-			const logger = new Logger()
-			rows.push(...logger.table(arr, [], { padding: 3, silent: true }))
+			rows.push(...this.logger.table(arr, [], { padding: 3, silent: true }))
 			rows.push("")
 		}
 
@@ -393,8 +413,7 @@ class Command {
 				}
 				arr.push([flagStr, optObj.help + optObj.defaultText])
 			})
-			const logger = new Logger()
-			rows.push(...logger.table(arr, [], { padding: 3, silent: true }))
+			rows.push(...this.logger.table(arr, [], { padding: 3, silent: true }))
 			rows.push("")
 		}
 
@@ -405,8 +424,7 @@ class Command {
 			this.subcommands.forEach(subcmd => {
 				arr.push([`  ${subcmd.name}`, ` - ${subcmd.help || 'No description'}`])
 			})
-			const logger = new Logger()
-			rows.push(...logger.table(arr, [], { padding: 3, silent: true }))
+			rows.push(...this.logger.table(arr, [], { padding: 3, silent: true }))
 			rows.push("")
 		}
 
