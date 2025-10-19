@@ -1,9 +1,8 @@
-export default CommandMessage;
 /**
  * Command message class
  * Enhanced to handle equals syntax and validate inputs
  */
-declare class CommandMessage extends Message {
+export default class CommandMessage extends Message {
     /**
      * Create CommandMessage instance from body
      * @param {any} input - body to create message from
@@ -21,25 +20,53 @@ declare class CommandMessage extends Message {
      * @param {object} input - Command message properties
      * @param {*} [input.body] - Message body, used only to store original input if it is string
      * @param {string} [input.name] - Command name
-     * @param {string[]} [input.args] - Command arguments
+     * @param {string[]} [input.argv] - Command arguments
      * @param {object} [input.opts] - Command options
      * @param {object[]} [input.children] - Subcommands in their messages, usually it is only one or zero.
      */
     constructor(input?: {
         body?: any;
         name?: string | undefined;
-        args?: string[] | undefined;
+        argv?: string[] | undefined;
         opts?: object;
         children?: any[] | undefined;
     });
-    /** @type {string} */
-    name: string;
-    /** @type {string[]} */
-    args: string[];
-    /** @type {object} */
-    opts: object;
-    /** @type {CommandMessage[]} */
-    children: CommandMessage[];
+    /**
+     * @param {string} value - Command name
+     */
+    set name(value: string);
+    /**
+     * @returns {string} Command name
+     */
+    get name(): string;
+    /**
+     * @param {string[]} value - Command arguments
+     */
+    set argv(value: string[]);
+    /**
+     * @returns {string[]} Command arguments without name (first argument)
+     */
+    get argv(): string[];
+    /**
+     * @param {object} value - Command options
+     */
+    set opts(value: object);
+    /**
+     * @returns {object} Command options
+     */
+    get opts(): object;
+    /**
+     * @param {CommandMessage[]} value - Subcommands
+     */
+    set children(value: CommandMessage[]);
+    /**
+     * @returns {CommandMessage[]} Subcommands
+     */
+    get children(): CommandMessage[];
+    /**
+     * @returns {string[]} Command arguments incuding name
+     */
+    get args(): string[];
     /**
      * @returns {string} Sub command name if exists otherwise empty string.
      */
@@ -52,5 +79,11 @@ declare class CommandMessage extends Message {
      * @param {any} msg
      */
     add(msg: any): void;
+    /**
+     * Update message body based on current name, args and opts
+     * @returns {void}
+     */
+    updateBody(): void;
+    #private;
 }
 import Message from "../Message.js";

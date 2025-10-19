@@ -1,8 +1,12 @@
 import { describe, it, before, beforeEach } from "node:test"
 import assert from "node:assert/strict"
-import DB from "@nan0web/db-fs"
+import FS from "@nan0web/db-fs"
 import { NoConsole } from "@nan0web/log"
-import { DatasetParser, DocsParser, runSpawn } from "@nan0web/test"
+import {
+	DatasetParser, // use for .datasets with it("How to ...?"
+	DocsParser, // use for .md with it("How to ...?"
+	runSpawn, // use for running commands
+} from "@nan0web/test"
 import {
 	Chat,
 	Command,
@@ -13,9 +17,8 @@ import {
 	Message
 } from "./index.js"
 
-const fs = new DB()
+const fs = new FS()
 let pkg
-let task = ""
 
 // Load package.json once before tests
 before(async () => {
@@ -26,7 +29,6 @@ before(async () => {
 let console = new NoConsole()
 
 beforeEach((info) => {
-	task = info.name
 	console = new NoConsole()
 })
 
@@ -63,9 +65,6 @@ function testRender() {
 	 * These classes are perfect for building parsers,
 	 * CLI tools, communication protocols, message validation layers,
 	 * and contact or language data management.
-	 *
-	 * This document is available in other languages:
-	 * - [Ukrainian 🇺🇦](./docs/uk/README.md)
 	 *
 	 * ## Installation
 	 */
@@ -251,11 +250,12 @@ function testRender() {
 		})
 
 		const msg = mainCmd.parse(["init", "-V"])
-		console.info(msg.subCommandMessage.opts.version)
-		console.info(msg.subCommandMessage.args)
-
+		console.info(msg.subCommandMessage.opts.version) // true
+		console.info(msg.subCommandMessage.args) // ["init"]
+		console.info(msg.subCommandMessage.argv) // []
 		assert.strictEqual(console.output()[0][1], true)
-		assert.deepStrictEqual(console.output()[1][1], [])
+		assert.deepStrictEqual(console.output()[1][1], ["init"])
+		assert.deepStrictEqual(console.output()[2][1], [])
 	})
 
 	/**
@@ -375,6 +375,7 @@ function testRender() {
 	 * * **Methods**
 	 *   * `get subCommand` – returns the name of the first subcommand, if any.
 	 *   * `add(message)` – appends a child message.
+	 *   * `updateBody()` – updates the body based on current name, argv, and opts.
 	 *   * `toString()` – rebuilds full command input string.
 	 *   * `static parse(args)` – parses args into a CommandMessage.
 	 *   * `static from(input)` – returns unchanged or creates new instance.

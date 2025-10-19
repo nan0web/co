@@ -5,7 +5,7 @@ import Contact from "./Contact.js"
  * Chat message class
  * Represents a message in a chat with an author and optional next message
  */
-class Chat extends Message {
+export default class Chat extends Message {
 	/** @type {Contact} */
 	author
 
@@ -117,5 +117,3 @@ class Chat extends Message {
 		return chat.split("---\n").filter(part => part.trim() !== "")
 	}
 }
-
-export default Chat

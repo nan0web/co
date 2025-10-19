@@ -5,6 +5,10 @@ export type CommandConfig = {
      */
     name?: string | undefined;
     /**
+     * - Parent command
+     */
+    parent?: Command | null | undefined;
+    /**
      * - Command help
      */
     help?: string | undefined;
@@ -32,6 +36,7 @@ export type CommandConfig = {
 /**
  * @typedef {Object} CommandConfig
  * @property {string} [name] - Command name
+ * @property {Command | null} [parent] - Parent command
  * @property {string} [help] - Command help
  * @property {Logger} [logger] - Logger instance
  * @property {object} [options] - Command options
@@ -54,6 +59,8 @@ declare class Command {
     constructor(config?: CommandConfig, ...args: any[]);
     /** @type {string} */
     name: string;
+    /** @type {Command | null} */
+    parent: Command | null;
     /** @type {string} */
     help: string;
     /** @type {Logger} */
@@ -62,7 +69,10 @@ declare class Command {
     usage: string;
     /** @type {Map<string, CommandOption>} */
     options: Map<string, CommandOption>;
-    /** @type {Map<string, CommandOption>} */
+    /**
+     * @deprecated Must be moved to options.
+     * @type {Map<string, CommandOption>}
+     */
     arguments: Map<string, CommandOption>;
     /** @type {Map<string, Command>} */
     subcommands: Map<string, Command>;
@@ -70,6 +80,10 @@ declare class Command {
     aliases: Map<string, string>;
     /** @returns {typeof CommandMessage} */
     get Message(): typeof CommandMessage;
+    /** @returns {typeof CommandOption} */
+    get Option(): typeof CommandOption;
+    /** @returns {string} */
+    get path(): string;
     /**
      * Initialize default options and arguments
      * @returns {void}
@@ -84,7 +98,7 @@ declare class Command {
      * @param {string} [alias] - Short alias for the option
      * @returns {Command} - This command instance
      */
-    addOption(name: string, type: Function, def?: any, help?: string, alias?: string | undefined): Command;
+    addOption(name: string, type: Function, def?: any, help?: string, alias?: string): Command;
     /**
      * Returns the option by its name.
      * @param {string} name - Option name

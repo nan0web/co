@@ -6,7 +6,7 @@
  * const email = new Contact({ type: Contact.EMAIL, value: "test@example.com" })
  * console.log(email.toString()) // "mailto:test@example.com"
  */
-class Contact {
+export default class Contact {
 	/** @type {string} */
 	static ADDRESS = "address:"
 	/** @type {string} */
@@ -115,5 +115,3 @@ class Contact {
 		return new this(input)
 	}
 }
-
-export default Contact

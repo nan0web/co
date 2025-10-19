@@ -15,19 +15,20 @@ describe("CommandMessage class", () => {
 	})
 	it("should create instance with default values", () => {
 		const cmd = new CommandMessage()
+		assert.deepStrictEqual(cmd.name, "")
+		assert.deepStrictEqual(cmd.argv, [])
 		assert.deepStrictEqual(cmd.args, [])
 		assert.deepStrictEqual(cmd.opts, {})
 		assert.strictEqual(cmd.body, "")
 	})
 
 	it("should create instance with provided values", () => {
-		const args = ["arg1", "arg2"]
-		const opts = { option1: "value1", option2: true }
-		const body = "command with args"
-		const cmd = new CommandMessage({ args, opts, body })
+		const body = "command arg1 arg2 --option1 value1 --option2"
+		const cmd = new CommandMessage(body)
 
-		assert.deepStrictEqual(cmd.args, args)
-		assert.deepStrictEqual(cmd.opts, opts)
+		assert.deepStrictEqual(cmd.args, ["command", "arg1", "arg2"])
+		assert.deepStrictEqual(cmd.argv, ["arg1", "arg2"])
+		assert.deepStrictEqual(cmd.opts, { option1: "value1", option2: true })
 		assert.strictEqual(cmd.body, body)
 	})
 
@@ -57,16 +58,13 @@ describe("CommandMessage class", () => {
 
 	it("should convert to string representation", () => {
 		const cmd = new CommandMessage({
-			body: "test",
-			args: ["arg1", "arg2"],
+			name: "test",
+			argv: ["arg1", "arg2"],
 			opts: { flag: true, file: "test.txt" }
 		})
 		const str = cmd.toString()
 
-		assert.ok(str.includes("test"))
-		assert.ok(str.includes("--flag"))
-		assert.ok(str.includes("--file test.txt"))
-		assert.ok(str.includes("arg1 arg2"))
+		assert.equal(str, "test arg1 arg2 --flag --file test.txt")
 	})
 
 	it("should handle string input in constructor", () => {
@@ -146,7 +144,9 @@ describe("CommandMessage class", () => {
 					input = CommandMessage.parse(input)
 				}
 				super(input)
-				const { opts = {} } = input
+				const { name = "", argv = [], opts = {} } = input
+				this.name = name
+				this.argv = argv
 				this.opts = AppCommandOpts.from(opts)
 			}
 			/**

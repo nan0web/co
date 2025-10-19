@@ -1,28 +1,29 @@
 import Message from "../Message.js"
+import { str2argv } from "../utils/parse.js"
 
 /**
  * Command message class
  * Enhanced to handle equals syntax and validate inputs
  */
-class CommandMessage extends Message {
+export default class CommandMessage extends Message {
 	/** @type {string} */
-	name
+	#name = ""
 
 	/** @type {string[]} */
-	args
+	#argv = []
 
 	/** @type {object} */
-	opts
+	#opts = {}
 
 	/** @type {CommandMessage[]} */
-	children
+	#children = []
 
 	/**
 	 * Create a new CommandMessage instance
 	 * @param {object} input - Command message properties
 	 * @param {*} [input.body] - Message body, used only to store original input if it is string
 	 * @param {string} [input.name] - Command name
-	 * @param {string[]} [input.args] - Command arguments
+	 * @param {string[]} [input.argv] - Command arguments
 	 * @param {object} [input.opts] - Command options
 	 * @param {object[]} [input.children] - Subcommands in their messages, usually it is only one or zero.
 	 */
@@ -30,23 +31,100 @@ class CommandMessage extends Message {
 		if ("string" === typeof input) {
 			const msg = CommandMessage.parse(input)
 			input = {
-				body: input,
+				body: msg.body,
 				name: msg.name,
-				args: msg.args,
+				argv: msg.argv,
 				opts: msg.opts,
+				children: msg.children,
 			}
 		}
 		const {
 			name = "",
-			args = [],
+			argv = [],
 			opts = {},
 			children = [],
 		} = input
 		super(input)
-		this.name = String(name)
-		this.args = args.map(String)
-		this.opts = opts
-		this.children = children.map(c => CommandMessage.from(c))
+		if (this.body) {
+			const { name, argv, opts } = CommandMessage.parse(this.body)
+			this.name = name
+			this.argv = argv
+			this.opts = opts
+		}
+		else {
+			this.name = String(name)
+			this.argv = argv.map(String)
+			this.opts = opts
+			this.children = children.map(c => CommandMessage.from(c))
+		}
+		this.updateBody()
+	}
+
+	/**
+	 * @returns {string} Command name
+	 */
+	get name() {
+		return this.#name
+	}
+
+	/**
+	 * @param {string} value - Command name
+	 */
+	set name(value) {
+		this.#name = String(value)
+		this.updateBody()
+	}
+
+	/**
+	 * @returns {string[]} Command arguments incuding name
+	 */
+	get args() {
+		return [this.name, ...this.#argv].filter(Boolean)
+	}
+
+	/**
+	 * @returns {string[]} Command arguments without name (first argument)
+	 */
+	get argv() {
+		return this.#argv
+	}
+
+	/**
+	 * @param {string[]} value - Command arguments
+	 */
+	set argv(value) {
+		this.#argv = value.map(String)
+		this.updateBody()
+	}
+
+	/**
+	 * @returns {object} Command options
+	 */
+	get opts() {
+		return this.#opts
+	}
+
+	/**
+	 * @param {object} value - Command options
+	 */
+	set opts(value) {
+		this.#opts = value
+		this.updateBody()
+	}
+
+	/**
+	 * @returns {CommandMessage[]} Subcommands
+	 */
+	get children() {
+		return this.#children
+	}
+
+	/**
+	 * @param {CommandMessage[]} value - Subcommands
+	 */
+	set children(value) {
+		this.#children = value.map(c => CommandMessage.from(c))
+		this.updateBody()
 	}
 
 	/**
@@ -71,11 +149,19 @@ class CommandMessage extends Message {
 	}
 
 	/**
+	 * Update message body based on current name, args and opts
+	 * @returns {void}
+	 */
+	updateBody() {
+		this.body = this.toString()
+	}
+
+	/**
 	 * Convert command message to string
 	 * @returns {string} - String representation
 	 */
 	toString() {
-		const optsStr = Object.entries(this.opts)
+		const optsStr = Object.entries(this.opts ?? {})
 			.map(([key, value]) => {
 				if (value === true) {
 					return `--${key}`
@@ -87,14 +173,20 @@ class CommandMessage extends Message {
 			})
 			.join(" ")
 
-		const argsStr = this.args.map(arg => {
+		const argsStr = this.argv.map(arg => {
 			// Quote string arguments that contain spaces
 			const argStr = String(arg)
 			return argStr.includes(' ') ? `"${argStr}"` : argStr
 		}).join(" ")
 
-		return `${optsStr} ${argsStr}`.trim()
+		const tab = "  "
+
+		return [
+			`${this.name} ${argsStr} ${optsStr}`.trim(),
+			...this.children.map(s => `${tab}${s}`),
+		].join("\n")
 	}
+
 	/**
 	 * Create CommandMessage instance from body
 	 * @param {any} input - body to create message from
@@ -104,6 +196,7 @@ class CommandMessage extends Message {
 		if (input instanceof CommandMessage) return input
 		return new CommandMessage(input)
 	}
+
 	/**
 	 * Parse command line arguments into CommandMessage
 	 * @param {string[] | string} argv - Command line arguments or a command string
@@ -111,43 +204,16 @@ class CommandMessage extends Message {
 	 */
 	static parse(argv = []) {
 		if ("string" === typeof argv) {
-			// Handle quoted strings properly using more robust parsing
-			const parts = []
-			let i = 0
-			const str = argv.trim()
-
-			while (i < str.length) {
-				// Skip whitespace
-				while (i < str.length && str[i] === ' ') i++
-				if (i >= str.length) break
-
-				// Check for quotes
-				if (str[i] === '"' || str[i] === "'") {
-					const quote = str[i]
-					i++
-					let start = i
-					while (i < str.length && str[i] !== quote) i++
-					if (i < str.length) {
-						parts.push(str.slice(start, i))
-						i++
-					} else {
-						throw new Error(`Unmatched quote in argument: ${argv}`)
-					}
-				} else {
-					// Regular argument
-					let start = i
-					while (i < str.length && str[i] !== ' ') i++
-					parts.push(str.slice(start, i))
-				}
-			}
-
-			argv = parts
+			argv = str2argv(argv)
 		}
 
 		/**
-		 * @type {{args: string[], opts: Record<string, *>}}
+		 * @type {{name: string, argv: string[], opts: Record<string, *>}}
 		 */
-		const result = { args: [], opts: {} }
+		const result = { name: "", argv: [], opts: {} }
+		if (argv.length > 0 && !argv[0].startsWith("-")) {
+			result.name = argv[0]
+		}
 		let i = 0
 
 		const setOption = (key, value) => {
@@ -206,7 +272,9 @@ class CommandMessage extends Message {
 					}
 				}
 			} else {
-				result.args.push(curr)
+				if ("" !== curr && result.name !== curr) {
+					result.argv.push(curr)
+				}
 				i++
 			}
 		}
@@ -214,5 +282,3 @@ class CommandMessage extends Message {
 		return new CommandMessage(result)
 	}
 }
-
-export default CommandMessage

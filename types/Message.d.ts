@@ -1,8 +1,7 @@
-export default Message;
 /**
  * Base Message class
  */
-declare class Message {
+export default class Message {
     /**
      * Create Message instance from body
      * @param {any} input - body to create message from
@@ -12,15 +11,29 @@ declare class Message {
     /**
      * Create a new Message instance
      * @param {object} input
+     * @param {Record<string, any>} [input.head] - Message head.
      * @param {any} [input.body] - Message body.
      * @param {Date} [input.time] - Created at time.
      */
     constructor(input?: {
+        head?: Record<string, any> | undefined;
         body?: any;
         time?: Date | undefined;
     });
+    /** @type {Record<string, any>} */
+    head: Record<string, any>;
     /** @type {any} */
     body: any;
+    /**
+     * Returns true if message is valid.
+     * @returns {boolean}
+     */
+    get isValid(): boolean;
+    /**
+     * Validates body and its fields and returns errors for every field (key).
+     * @returns {Record<string, null | Error | string>}
+     */
+    get errors(): Record<string, null | Error | string>;
     /**
      * Get message creation time
      * @returns {Date}

@@ -1,9 +1,8 @@
-export default Chat;
 /**
  * Chat message class
  * Represents a message in a chat with an author and optional next message
  */
-declare class Chat extends Message {
+export default class Chat extends Message {
     /**
      * Create Chat instance from input
      * @param {any} input - Input to create chat from
@@ -35,7 +34,7 @@ declare class Chat extends Message {
         next?: Chat | undefined;
         body?: any;
         time?: Date | undefined;
-    } | undefined);
+    });
     /** @type {Contact} */
     author: Contact;
     /** @type {Chat?} */

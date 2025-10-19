@@ -14,7 +14,7 @@ describe("Message class", () => {
 	})
 	it("should create instance with default values", () => {
 		const msg = new Message()
-		assert.strictEqual(msg.body, "")
+		assert.strictEqual(msg.body, undefined)
 		assert.ok(msg.time > 0)
 	})
 

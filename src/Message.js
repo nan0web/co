@@ -1,7 +1,9 @@
 /**
  * Base Message class
  */
-class Message {
+export default class Message {
+	/** @type {Record<string, any>} */
+	head = {}
 	/** @type {any} */
 	body
 
@@ -11,16 +13,35 @@ class Message {
 	/**
 	 * Create a new Message instance
 	 * @param {object} input
+	 * @param {Record<string, any>} [input.head] - Message head.
 	 * @param {any} [input.body] - Message body.
 	 * @param {Date} [input.time] - Created at time.
 	 */
 	constructor(input = {}) {
 		const {
-			body = "",
+			head = this.head,
+			body,
 			time = Date.now(),
 		} = input
 		this.#time = new Date(time)
+		this.head = head
 		this.body = body
+	}
+
+	/**
+	 * Returns true if message is valid.
+	 * @returns {boolean}
+	 */
+	get isValid() {
+		return Object.values(this.errors).every(e => null === e)
+	}
+
+	/**
+	 * Validates body and its fields and returns errors for every field (key).
+	 * @returns {Record<string, null | Error | string>}
+	 */
+	get errors() {
+		return {}
 	}
 
 	/**
@@ -58,5 +79,3 @@ class Message {
 		return new Message(input)
 	}
 }
-
-export default Message

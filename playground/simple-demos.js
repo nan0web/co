@@ -75,7 +75,14 @@ export async function runSimpleDemos(console) {
 	await pressAnyKey(console)
 }
 
+let keyPressHandlerRegistered = false
+
 export async function pressAnyKey(console) {
+	if (!keyPressHandlerRegistered) {
+		process.stdin.setMaxListeners(process.stdin.getMaxListeners() + 1)
+		keyPressHandlerRegistered = true
+	}
+	
 	console.info("\n--- press any key ---")
 	await next()
 	console.clearLine(console.cursorUp())

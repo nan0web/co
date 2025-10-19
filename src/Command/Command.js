@@ -7,6 +7,7 @@ import CommandOption from "./CommandOption.js"
 /**
  * @typedef {Object} CommandConfig
  * @property {string} [name] - Command name
+ * @property {Command | null} [parent] - Parent command
  * @property {string} [help] - Command help
  * @property {Logger} [logger] - Logger instance
  * @property {object} [options] - Command options
@@ -27,6 +28,9 @@ class Command {
 	/** @type {string} */
 	name
 
+	/** @type {Command | null} */
+	parent
+
 	/** @type {string} */
 	help
 
@@ -39,7 +43,10 @@ class Command {
 	/** @type {Map<string, CommandOption>} */
 	options
 
-	/** @type {Map<string, CommandOption>} */
+	/**
+	 * @deprecated Must be moved to options.
+	 * @type {Map<string, CommandOption>}
+	 */
 	arguments
 
 	/** @type {Map<string, Command>} */
@@ -56,6 +63,7 @@ class Command {
 		const {
 			name = "",
 			help = "",
+			parent = null,
 			logger = new Logger(),
 			usage = "",
 			options = {},
@@ -65,6 +73,7 @@ class Command {
 
 		this.name = name
 		this.help = help
+		this.parent = parent
 		this.logger = logger
 		this.usage = usage
 		this.options = new Map()
@@ -109,6 +118,25 @@ class Command {
 		return /** @type {typeof Command} */ (this.constructor).Message
 	}
 
+	/** @returns {typeof CommandOption} */
+	get Option() {
+		return /** @type {typeof Command} */ (this.constructor).Option
+	}
+
+	/** @returns {string} */
+	get path() {
+		const result = []
+		let parent = this.parent
+		while (parent) {
+			if (parent.name) {
+				result.unshift(parent.name || "index")
+			}
+			parent = parent.parent
+		}
+		result.unshift("")
+		return result.join("/")
+	}
+
 	/**
 	 * Initialize default options and arguments
 	 * @returns {void}
@@ -134,7 +162,7 @@ class Command {
 	 * @returns {Command} - This command instance
 	 */
 	addOption(name, type, def = null, help = "", alias = "") {
-		this.options.set(name, new CommandOption({
+		this.options.set(name, new this.Option({
 			name,
 			type,
 			def,
@@ -166,7 +194,7 @@ class Command {
 	 * @returns {Command} - This command instance
 	 */
 	addArgument(name, type, def = null, help = "", required = false) {
-		this.arguments.set(name, new CommandOption({
+		this.arguments.set(name, new this.Option({
 			name,
 			type,
 			def,
@@ -183,6 +211,7 @@ class Command {
 	 */
 	addSubcommand(subcommand) {
 		this.subcommands.set(subcommand.name, subcommand)
+		subcommand.parent = this
 		return this
 	}
 
@@ -211,7 +240,7 @@ class Command {
 			if (subcmd) {
 				const subMsg = subcmd.parse(msg.toString())
 				subMsg.name = subcmd.name
-				subMsg.args = subMsg.args.filter(a => a !== subcmdName)
+				subMsg.argv = subMsg.args.filter(a => a !== subcmdName)
 				msg.add(subMsg)
 			} else {
 				throw new CommandError(["Cannot find a sub-command", subcmdName].join(": "), msg)
@@ -262,10 +291,10 @@ class Command {
 		})
 
 		return new this.Message({
-			...msg,
-			body: argv,
-			args: args.filter(arg => arg !== undefined),
-			opts
+			name: msg.name,
+			argv: args.filter(arg => arg !== undefined),
+			opts,
+			children: msg.children,
 		})
 	}
 

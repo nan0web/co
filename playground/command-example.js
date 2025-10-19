@@ -1,7 +1,35 @@
 #!/usr/bin/env node
 
-import { Command } from "../src/index.js"
+import Message, { Command } from "../src/index.js"
 import { pressAnyKey } from "./simple-demos.js"
+
+class InitializeMessage extends Message {
+	/** @type {string} */
+	template = "default"
+
+	constructor(input = {}) {
+		super(input)
+		const {
+			template = this.template,
+		} = input
+		this.template = String(template)
+	}
+
+	/** @returns {string} */
+	get templateHelp() { return this.t("Template to use") }
+
+	/** @returns {string} */
+	get templateAlias() { return "t" }
+
+	/**
+	 * @param {any} input
+	 * @return {InitializeMessage}
+	 */
+	static from(input) {
+		if (input instanceof InitializeMessage) return input
+		return new InitializeMessage(input)
+	}
+}
 
 export async function runCommandExampleDemo(console) {
 	console.clear()
@@ -41,6 +69,7 @@ export async function runCommandExampleDemo(console) {
 	const initCommand = new Command({
 		name: "init",
 		help: "Initialize a repository",
+		Message: InitializeMessage,
 		options: {
 			template: [String, "default", "Template to use", "t"]
 		}
@@ -62,7 +91,7 @@ export async function runCommandExampleDemo(console) {
 	if (parsedWithSub.children[0]) {
 		const sub = parsedWithSub.children[0]
 		console.info(`Subcommand: ${sub.name}`)
-		console.info(`Sub args: ${sub.args}`)
+		console.info(`Sub args: ${sub.argv}`)
 		console.info(`Sub options: ${JSON.stringify(sub.opts)}`)
 	}
 

@@ -2,6 +2,7 @@ import Chat from "./Chat.js"
 import Contact from "./Contact.js"
 
 import Message from "./Message.js"
+import I18nMessage from "./I18nMessage.js"
 
 import Language from "./Language.js"
 
@@ -21,6 +22,7 @@ export {
 	Contact,
 
 	Message,
+	I18nMessage,
 
 	Language,
 }

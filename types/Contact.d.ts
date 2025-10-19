@@ -1,4 +1,3 @@
-export default Contact;
 /**
  * Contact handling class
  * Parses and formats contact information with specific URI schemes.
@@ -7,7 +6,7 @@ export default Contact;
  * const email = new Contact({ type: Contact.EMAIL, value: "test@example.com" })
  * console.log(email.toString()) // "mailto:test@example.com"
  */
-declare class Contact {
+export default class Contact {
     /** @type {string} */
     static ADDRESS: string;
     /** @type {string} */
@@ -59,7 +58,7 @@ declare class Contact {
     constructor(input?: {
         type?: string | undefined;
         value?: string | undefined;
-    } | undefined);
+    });
     /** @type {string} */
     type: string;
     /** @type {string} */

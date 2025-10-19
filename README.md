@@ -2,9 +2,9 @@
 
 Communication starts here with a simple Message.
 
-|Package name|[Status](https://github.com/nan0web/monorepo/blob/main/system.md#написання-сценаріїв)|Documentation|Test coverage|Features|Npm version|
-|---|---|---|---|---|---|
- |[@nan0web/co](https://github.com/nan0web/@nan0web/co/) |🟢 `98.3%` |🧪 [English 🏴󠁧󠁢󠁥󠁮󠁧󠁿](https://github.com/nan0web/@nan0web/co/blob/main/README.md)<br />[Українською 🇺🇦](https://github.com/nan0web/@nan0web/co/blob/main/docs/uk/README.md) |🟢 `91.5%` |✅ d.ts 📜 system.md 🕹️ playground |— |
+|[Status](https://github.com/nan0web/monorepo/blob/main/system.md#написання-сценаріїв)|Documentation|Test coverage|Features|Npm version|
+|---|---|---|---|---|
+ |🟢 `98.3%` |🧪 [English 🏴󠁧󠁢󠁥󠁮󠁧󠁿](https://github.com/nan0web/co/blob/main/README.md)<br />[Українською 🇺🇦](https://github.com/nan0web/co/blob/main/docs/uk/README.md) |🟢 `91.5%` |✅ d.ts 📜 system.md 🕹️ playground |— |
 
 ## Description
 
@@ -23,9 +23,6 @@ Core classes:
 These classes are perfect for building parsers,
 CLI tools, communication protocols, message validation layers,
 and contact or language data management.
-
-This document is available in other languages:
-- [Ukrainian 🇺🇦](./docs/uk/README.md)
 
 ## Installation
 
@@ -163,9 +160,9 @@ const mainCmd = new Command({
 })
 
 const msg = mainCmd.parse(["init", "-V"])
-console.info(msg.subCommandMessage.opts.version)
-console.info(msg.subCommandMessage.args)
-
+console.info(msg.subCommandMessage.opts.version) // true
+console.info(msg.subCommandMessage.args) // ["init"]
+console.info(msg.subCommandMessage.argv) // []
 ```
 ### Errors
 
@@ -273,6 +270,7 @@ Extends `Message`.
 * **Methods**
   * `get subCommand` – returns the name of the first subcommand, if any.
   * `add(message)` – appends a child message.
+  * `updateBody()` – updates the body based on current name, argv, and opts.
   * `toString()` – rebuilds full command input string.
   * `static parse(args)` – parses args into a CommandMessage.
   * `static from(input)` – returns unchanged or creates new instance.

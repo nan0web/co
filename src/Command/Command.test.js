@@ -123,7 +123,7 @@ describe("Command class", () => {
 		const msg = cmd.parse(["test", "--help", "--file", "input.txt"])
 
 		assert.ok(msg instanceof CommandMessage)
-		assert.deepStrictEqual(msg.args, ["test"])
+		assert.deepStrictEqual(msg.argv, ["test"])
 		assert.deepStrictEqual(msg.opts, {
 			help: true,
 			verbose: true,
@@ -204,13 +204,17 @@ describe("Command class", () => {
 				})
 			}
 		})
-
+		/**
+		 * For API equivalent is:
+		 * /sub/<argument1>/<argument2>?help
+		 */
 		const msg = mainCommand.parse(["sub", "--help"])
 		assert.ok(msg instanceof CommandMessage)
 		assert.ok(msg.children[0] instanceof CommandMessage)
 		const sub = msg.children[0]
-		assert.deepStrictEqual(msg.args, [])
-		assert.deepStrictEqual(sub.args, [])
+		assert.deepStrictEqual(msg.args, ["sub"])
+		assert.deepStrictEqual(msg.argv, [])
+		assert.deepStrictEqual(sub.argv, [])
 		assert.deepStrictEqual(msg.opts, { help: true, version: false })
 	})
 })
