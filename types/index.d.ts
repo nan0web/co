@@ -8,4 +8,5 @@ import Contact from "./Contact.js";
 import Message from "./Message.js";
 import I18nMessage from "./I18nMessage.js";
 import Language from "./Language.js";
-export { Chat, Command, CommandError, CommandOption, CommandMessage, Contact, Message, I18nMessage, Language };
+import { str2argv } from "./utils/parse.js";
+export { Chat, Command, CommandError, CommandOption, CommandMessage, Contact, Message, I18nMessage, Language, str2argv };

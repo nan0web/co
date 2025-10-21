@@ -10,6 +10,16 @@
 		"!src/**/*.test.js",
 		"types/**/*.d.ts"
 	],
+	"exports": {
+		".": {
+			"import": "./src/index.js",
+			"types": "./types/index.d.ts"
+		},
+		"./utils": {
+			"import": "./src/utils/index.js",
+			"types": "./types/utils/index.d.ts"
+		}
+	},
 	"scripts": {
 		"build": "tsc",
 		"test": "node --test \"src/**/*.test.js\"",

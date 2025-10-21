@@ -4,7 +4,7 @@ Communication starts here with a simple Message.
 
 |[Status](https://github.com/nan0web/monorepo/blob/main/system.md#написання-сценаріїв)|Documentation|Test coverage|Features|Npm version|
 |---|---|---|---|---|
- |🟢 `98.3%` |🧪 [English 🏴󠁧󠁢󠁥󠁮󠁧󠁿](https://github.com/nan0web/co/blob/main/README.md)<br />[Українською 🇺🇦](https://github.com/nan0web/co/blob/main/docs/uk/README.md) |🟢 `91.5%` |✅ d.ts 📜 system.md 🕹️ playground |— |
+ |🟢 `98.5%` |🧪 [English 🏴󠁧󠁢󠁥󠁮󠁧󠁿](https://github.com/nan0web/co/blob/main/README.md)<br />[Українською 🇺🇦](https://github.com/nan0web/co/blob/main/docs/uk/README.md) |🟢 `91.5%` |✅ d.ts 📜 system.md 🕹️ playground |1.0.1 |
 
 ## Description
 
@@ -183,8 +183,18 @@ try {
 	if (err instanceof CommandError) {
 		console.error(err.message) // ← Invalid number for count: invalid
 		console.error(JSON.stringify(err.data)) // ← {"providedValue":"invalid"}
-	}
-}
+		}
+		}
+```
+### Utility Functions
+
+Access utilities without importing the entire package
+
+How to use utility functions individually?
+```js
+import { str2argv } from '@nan0web/co/utils'
+const result = str2argv('"Hello world" --option value')
+console.log(result) // ← ['Hello world', '--option', 'value']
 ```
 ## API
 

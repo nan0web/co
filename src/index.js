@@ -11,6 +11,8 @@ import CommandError from "./Command/CommandError.js"
 import CommandMessage from "./Command/CommandMessage.js"
 import CommandOption from "./Command/CommandOption.js"
 
+import { str2argv } from "./utils/parse.js"
+
 export {
 	Chat,
 
@@ -25,6 +27,8 @@ export {
 	I18nMessage,
 
 	Language,
+
+	str2argv,
 }
 
 export default Message

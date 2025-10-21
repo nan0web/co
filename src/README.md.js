@@ -14,7 +14,8 @@ import {
 	CommandMessage,
 	Contact,
 	Language,
-	Message
+	Message,
+	str2argv
 } from "./index.js"
 
 const fs = new FS()
@@ -278,8 +279,8 @@ function testRender() {
 			if (err instanceof CommandError) {
 				console.error(err.message) // ← Invalid number for count: invalid
 				console.error(JSON.stringify(err.data)) // ← {"providedValue":"invalid"}
-			//}
-		//}
+				//}
+				//}
 				assert.ok(err.message.includes("Invalid number"))
 			}
 		}
@@ -289,6 +290,18 @@ function testRender() {
 		])
 	})
 
+	/**
+	 * @docs
+	 * ### Utility Functions
+	 *
+	 * Access utilities without importing the entire package
+	 */
+	it("How to use utility functions individually?", () => {
+		//import { str2argv } from '@nan0web/co/utils'
+		const result = str2argv('"Hello world" --option value')
+		console.log(result) // ← ['Hello world', '--option', 'value']
+		assert.deepEqual(result, ['Hello world', '--option', 'value'])
+	})
 	/**
 	 * @docs
 	 * ## API
