@@ -32,6 +32,7 @@
 	"packageManager": "pnpm@10.11.0",
 	"devDependencies": {
 		"@nan0web/log": "workspace:*",
+		"@nan0web/release": "workspace:*",
 		"@nan0web/test": "workspace:*",
 		"@nan0web/types": "workspace:*",
 		"@nan0web/ui-cli": "workspace:*",
