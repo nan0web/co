@@ -5,6 +5,11 @@
 	"main": "./src/index.js",
 	"type": "module",
 	"types": "./types/index.d.ts",
+	"files": [
+		"src/**/*.js",
+		"!src/**/*.test.js",
+		"types/**/*.d.ts"
+	],
 	"scripts": {
 		"build": "tsc",
 		"test": "node --test \"src/**/*.test.js\"",

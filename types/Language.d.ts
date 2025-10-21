@@ -22,7 +22,7 @@ export default class Language {
         icon?: string | undefined;
         code?: string | undefined;
         locale?: string | undefined;
-    });
+    } | undefined);
     /** @type {string} */
     name: string;
     /** @type {string} */

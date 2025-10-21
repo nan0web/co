@@ -10,7 +10,7 @@ export default class I18nMessage extends Message {
      * @param {Record<string, any>} [params] - Parameters to replace placeholders
      * @returns {string} - Translated string with replaced parameters
      */
-    static Replacer: (key: string, params?: Record<string, any>) => string;
+    static Replacer: (key: string, params?: Record<string, any> | undefined) => string;
     /**
      * Create I18nMessage from various inputs
      * @param {any} input - Input to create message from
@@ -35,7 +35,7 @@ export default class I18nMessage extends Message {
      * @param {Record<string, any>} [params] - Parameters for placeholder replacement
      * @returns {string} - Translated and formatted message
      */
-    t(key: string, params?: Record<string, any>): string;
+    t(key: string, params?: Record<string, any> | undefined): string;
     #private;
 }
 export type TranslateFunction = (key: string, params?: Record<string, any>) => string;

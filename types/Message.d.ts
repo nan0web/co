@@ -33,7 +33,7 @@ export default class Message {
      * Validates body and its fields and returns errors for every field (key).
      * @returns {Record<string, null | Error | string>}
      */
-    get errors(): Record<string, null | Error | string>;
+    get errors(): Record<string, string | Error | null>;
     /**
      * Get message creation time
      * @returns {Date}

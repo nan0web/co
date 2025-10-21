@@ -34,7 +34,7 @@ export default class Chat extends Message {
         next?: Chat | undefined;
         body?: any;
         time?: Date | undefined;
-    });
+    } | undefined);
     /** @type {Contact} */
     author: Contact;
     /** @type {Chat?} */

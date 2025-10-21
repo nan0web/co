@@ -34,7 +34,7 @@ export default class CommandMessage extends Message {
     /**
      * @param {string} value - Command name
      */
-    set name(value: string);
+    set name(arg: string);
     /**
      * @returns {string} Command name
      */
@@ -42,7 +42,7 @@ export default class CommandMessage extends Message {
     /**
      * @param {string[]} value - Command arguments
      */
-    set argv(value: string[]);
+    set argv(arg: string[]);
     /**
      * @returns {string[]} Command arguments without name (first argument)
      */
@@ -50,15 +50,15 @@ export default class CommandMessage extends Message {
     /**
      * @param {object} value - Command options
      */
-    set opts(value: object);
+    set opts(arg: any);
     /**
      * @returns {object} Command options
      */
-    get opts(): object;
+    get opts(): any;
     /**
      * @param {CommandMessage[]} value - Subcommands
      */
-    set children(value: CommandMessage[]);
+    set children(arg: CommandMessage[]);
     /**
      * @returns {CommandMessage[]} Subcommands
      */

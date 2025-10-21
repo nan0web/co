@@ -58,7 +58,7 @@ export default class Contact {
     constructor(input?: {
         type?: string | undefined;
         value?: string | undefined;
-    });
+    } | undefined);
     /** @type {string} */
     type: string;
     /** @type {string} */

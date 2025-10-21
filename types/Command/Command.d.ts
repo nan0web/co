@@ -98,7 +98,7 @@ declare class Command {
      * @param {string} [alias] - Short alias for the option
      * @returns {Command} - This command instance
      */
-    addOption(name: string, type: Function, def?: any, help?: string, alias?: string): Command;
+    addOption(name: string, type: Function, def?: any, help?: string, alias?: string | undefined): Command;
     /**
      * Returns the option by its name.
      * @param {string} name - Option name
