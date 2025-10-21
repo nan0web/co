@@ -1,6 +1,6 @@
 {
 	"name": "@nan0web/co",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Communication starts here with a simple Message.",
 	"main": "./src/index.js",
 	"type": "module",
