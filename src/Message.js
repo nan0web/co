@@ -11,7 +11,7 @@ import { empty, Enum, isConstructible, to as castTo } from "@nan0web/types"
  * Base Message class.
  *
  * Provides a timestamped container for arbitrary payload data,
- * validation utilities via a static {@link Body} schema and
+ * validation utilities via a static Body schema and
  * a generic {@link parseBody} helper.
  *
  * @class Message
@@ -22,23 +22,6 @@ export default class Message {
 	 *
 	 * Sub‑classes can extend this class to declare fields,
 	 * default values, validation functions and attribute metadata.
-	 *
-	 * Example:
-	 * ```js
-	 * class MyBody {
-	 *   static foo = { alias: "f", defaultValue: false }
-	 *   /** @type {boolean} *\/
-	 *   foo = false
-	 *
-	 *   static bar = { options: ["a","b"], defaultValue: "a" }
-	 *   /** @type {"a"|"b"} *\/
-	 *   bar = "a"
-	 *
-	 *   static barValidation(value) {
-	 *     return value === "a" ? true : "must be a"
-	 *   }
-	 * }
-	 * ```
 	 */
 	static Body = class {}
 

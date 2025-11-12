@@ -1,49 +1,38 @@
 /**
  * @typedef {Object} OutputMessageInput
- * @property {string[]} [content=[]]
- * @property {string[] | any} [body=[]]
- * @property {Record<string, string>} [head={}]
- * @property {Error | null} [error=null]
- * @property {number} [priority=OutputMessage.PRIORITY.NORMAL]
- * @property {string} [type=this.type]
- * @property {string} [id=this.id]
- * @property {Date} [time=new Date()]
+ * @property {string[]} [content=[]] - Content lines.
+ * @property {any} [body] - Raw body (overrides *content* if provided).
+ * @property {Record<string, any>} [head={}] - Additional metadata.
+ * @property {Error|null} [error=null] - Associated error object.
+ * @property {number} [priority=OutputMessage.PRIORITY.NORMAL] - Message priority.
+ * @property {string} [type=OutputMessage.TYPES.INFO] - Message type.
+ * @property {string} [id] - Unique identifier.
+ * @property {Date|number} [time=new Date()] - Timestamp.
  */
 /**
  * OutputMessage – message sent from the system to the UI.
+ *
+ * Extends {@link Message} with richer metadata, priority handling and error support.
  *
  * @class OutputMessage
  * @extends Message
  */
 export default class OutputMessage extends Message {
-    static PRIORITY: {
-        LOW: number;
-        NORMAL: number;
-        HIGH: number;
-        CRITICAL: number;
-    };
-    static TYPES: {
-        TEXT: string;
-        FORM: string;
-        PROGRESS: string;
-        ERROR: string;
-        INFO: string;
-        SUCCESS: string;
-        WARNING: string;
-        COMMAND: string;
-        NAVIGATION: string;
-    };
+    /** @type {Record<string, number>} */
+    static PRIORITY: Record<string, number>;
+    /** @type {Record<string, string>} */
+    static TYPES: Record<string, string>;
     /**
-     * Creates an OutputMessage from plain input.
+     * Create an OutputMessage from plain input.
      *
-     * @param {Object} input - Message data.
+     * @param {Object} input
      * @returns {OutputMessage}
      */
     static from(input: any): OutputMessage;
     /**
-     * Creates an OutputMessage.
+     * Create a new OutputMessage.
      *
-     * @param {OutputMessageInput | string | string[] | Error} [input={}] - Message properties.
+     * @param {OutputMessageInput|string|string[]|Error} [input={}]
      */
     constructor(input?: string | string[] | Error | OutputMessageInput | undefined);
     /** @type {string[]} */
@@ -59,9 +48,9 @@ export default class OutputMessage extends Message {
     /** @type {string} */
     id: string;
     /** @param {string[]|string} value */
-    set content(arg: any);
-    /** @returns {any} */
-    get content(): any;
+    set content(arg: any[]);
+    /** @returns {any[]} */
+    get content(): any[];
     /** @returns {number} */
     get size(): number;
     /** @returns {boolean} */
@@ -69,39 +58,63 @@ export default class OutputMessage extends Message {
     /** @returns {boolean} */
     get isInfo(): boolean;
     /**
-     * Checks if the message type is valid.
+     * Check whether the message type is a known enum value.
      *
      * @returns {boolean}
      */
     isValidType(): boolean;
     /**
-     * Checks whether the message contains any body content.
+     * Determine whether the message contains any body content.
      *
      * @returns {boolean}
      */
     isEmpty(): boolean;
     /**
-     * Combines multiple messages into a new one.
+     * Combine this message with additional OutputMessages.
      *
-     * @param {...OutputMessage} messages - Messages to combine.
+     * @param {...OutputMessage} messages
      * @returns {OutputMessage}
      */
     combine(...messages: OutputMessage[]): OutputMessage;
     /**
-     * Serialises the message to a plain JSON object.
+     * Serialise the message to a plain JSON object.
      *
      * @returns {Object}
      */
     toJSON(): any;
 }
 export type OutputMessageInput = {
+    /**
+     * - Content lines.
+     */
     content?: string[] | undefined;
-    body?: string[] | any;
-    head?: Record<string, string> | undefined;
+    /**
+     * - Raw body (overrides *content* if provided).
+     */
+    body?: any;
+    /**
+     * - Additional metadata.
+     */
+    head?: Record<string, any> | undefined;
+    /**
+     * - Associated error object.
+     */
     error?: Error | null | undefined;
+    /**
+     * - Message priority.
+     */
     priority?: number | undefined;
+    /**
+     * - Message type.
+     */
     type?: string | undefined;
+    /**
+     * - Unique identifier.
+     */
     id?: string | undefined;
-    time?: Date | undefined;
+    /**
+     * - Timestamp.
+     */
+    time?: number | Date | undefined;
 };
 import Message from "./Message.js";

@@ -1,74 +1,71 @@
-/** @typedef {Partial<Message> | null} InputMessageValue */
 /**
- * Represents a message input with value, options, and metadata.
+ * @typedef {Partial<Message> | null} InputMessageValue
+ *
+ * Represents a message input with value, options and metadata.
+ *
+ * @class InputMessage
  */
 export default class InputMessage {
+    /** Escape character (ESC) */
     static ESCAPE: string;
+    /** @type {typeof Message} */
     static Message: typeof Message;
     /**
-     * Creates an InputMessage instance from the given value.
-     * @param {InputMessage|object|string} value - The value to create from
-     * @returns {InputMessage} An InputMessage instance
+     * Create InputMessage from various values.
+     *
+     * @param {InputMessage|object|string} value
+     * @returns {InputMessage}
      */
     static from(value: InputMessage | object | string): InputMessage;
     /**
-     * Creates a new InputMessage instance.
-     * @param {object} props - Input message properties
-     * @param {InputMessageValue} [props.value=null] - Input value
-     * @param {string[]|string} [props.options=[]] - Available options
-     * @param {boolean} [props.waiting=false] - Waiting state flag
-     * @param {boolean} [props.escaped=false] - Sets value to escape when true
+     * Create a new InputMessage.
+     *
+     * @param {object} [props={}]
+     * @param {InputMessageValue} [props.value=null] - Input value.
+     * @param {string[]|string} [props.options=[]] - Available options.
+     * @param {boolean} [props.waiting=false] - Waiting flag.
+     * @param {boolean} [props.escaped=false] - Whether to store the ESCAPE character.
      */
     constructor(props?: {
         value?: InputMessageValue | undefined;
         options?: string | string[] | undefined;
         waiting?: boolean | undefined;
         escaped?: boolean | undefined;
-    });
-    /** @type {Message} Input value */
+    } | undefined);
+    /** @type {Message} */
     value: Message;
-    /** @type {string[]} Available options for this input */
+    /** @type {string[]} */
     options: string[];
-    /** @type {boolean} Whether this input is waiting for response */
+    /** @type {boolean} */
     waiting: boolean;
-    /**
-     * Returns the escape value.
-     * @returns {string}
-     */
+    /** @returns {string} */
     get ESCAPE(): string;
     /** @returns {typeof Message} */
     get Message(): typeof Message;
-    /**
-     * Checks if the input value is empty.
-     * @returns {boolean} True if value is empty or null, false otherwise
-     */
+    /** @returns {boolean} */
     get empty(): boolean;
-    /**
-     * Gets the timestamp when input was created.
-     * @returns {number} Creation timestamp
-     */
+    /** @returns {number} */
     get time(): number;
-    /**
-     * Checks if the input is an escape sequence.
-     * @returns {boolean} True if input value is escape sequence, false otherwise
-     */
+    /** @returns {boolean} */
     get isEscaped(): boolean;
-    /**
-     * Validates if the input has a non-empty value.
-     * @returns {boolean} True if input is valid, false otherwise
-     */
+    /** @returns {boolean} */
     get isValid(): boolean;
     /**
-     * Converts the input to a plain object representation.
-     * @returns {object} Object with all properties including timestamp
+     * Convert to plain object, including timestamp.
+     *
+     * @returns {object}
      */
     toObject(): object;
     /**
-     * Converts the input to a string representation including timestamp.
-     * @returns {string} String representation with timestamp and value
+     * Convert to string representation.
+     *
+     * @returns {string}
      */
     toString(): string;
     #private;
 }
+/**
+ * Represents a message input with value, options and metadata.
+ */
 export type InputMessageValue = Partial<Message> | null;
 import Message from "./Message.js";

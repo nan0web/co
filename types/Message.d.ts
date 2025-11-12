@@ -2,75 +2,92 @@
  * @typedef {object} MessageInput
  * @property {Record<string, any>} [input.head] - Message head.
  * @property {any} [input.body] - Message body.
- * @property {Date} [input.time] - Created at time.
+ * @property {Date|number} [input.time] - Creation timestamp.
  */
 /**
- * Base Message class
+ * Base Message class.
+ *
+ * Provides a timestamped container for arbitrary payload data,
+ * validation utilities via a static Body schema and
+ * a generic {@link parseBody} helper.
+ *
+ * @class Message
  */
 export default class Message {
     /**
      * Body class defines the meta data for the body object.
-     * @todo write the informational description
-     * static ERRORS = Record<string, string> - Errors for translations collection.
-     * static {field} = Record<string, any> - HTML-like element attributes such as minlength,
-     *   maxlength, min, max, step, etc., that can be used by UIs to render proper
-     *   editable components for the data.
      *
-     * static {field}Validation = (value) => string | string[] | true
+     * Sub‑classes can extend this class to declare fields,
+     * default values, validation functions and attribute metadata.
      */
     static Body: {
         new (): {};
     };
     /**
-     * Create Message instance from body
-     * @param {any} input - body to create message from
-     * @returns {Message} - Message instance
+     * Create a Message instance from a simple value.
+     *
+     * @param {any} input - Body string, object or existing Message.
+     * @returns {Message}
      */
     static from(input: any): Message;
     /**
-     * Parse input according to a Body schema.
-     * Handles alias mapping, default values and options validation.
+     * Parse raw input according to a schema.
      *
-     * @param {Record<string, any>} input - raw input object
-     * @param {Record<string, any>} Body  - schema object where each key maps to a config
-     * @returns {Record<string, any>} - parsed result
-     * @throws {Error} - when provided value is not in allowed options
+     * Handles alias mapping, default values and enum validation.
+     *
+     * @param {Record<string, any>} input - Raw input object.
+     * @param {Record<string, any> | Function} Body - Schema definition.
+     * @returns {Record<string, any>} Parsed and validated result.
+     * @throws {Error} When a value fails enum validation.
      */
-    static parseBody(input: Record<string, any>, Body: Record<string, any>): Record<string, any>;
+    static parseBody(input: Record<string, any>, Body: Record<string, any> | Function): Record<string, any>;
     /**
-     * Create a new Message instance
-     * @param {MessageInput} input
+     * Create a new Message instance.
+     *
+     * @param {MessageInput} [input={}]
      */
-    constructor(input?: MessageInput);
+    constructor(input?: MessageInput | undefined);
     /** @type {Record<string, any>} */
     head: Record<string, any>;
     /** @type {any} */
     body: any;
+    /**
+     * Check whether the message has no body and no head.
+     *
+     * @returns {boolean}
+     */
     get empty(): boolean;
     /**
-     * Returns true if message is valid.
+     * Returns true if the message passes validation.
+     *
      * @returns {boolean}
      */
     get isValid(): boolean;
     /**
-     * Get message creation time
+     * Get message creation time.
+     *
      * @returns {Date}
      */
     get time(): Date;
     /**
-     * Validates body and its fields and returns errors for every field (key) as string[].
-     * Schema format:
-     * @returns {Record<string, string[]>}
+     * Validate body fields according to the static {@link Body} schema.
+     *
+     * @returns {Record<string, string[]>} Mapping of field names to error messages.
      */
     getErrors(): Record<string, string[]>;
     /**
-     * Convert message to object representation
-     * @returns {object} - Object with body and time properties
+     * Convert message to plain object form.
+     *
+     * @returns {{body:any, time:number}} Object with body and timestamp.
      */
-    toObject(): object;
+    toObject(): {
+        body: any;
+        time: number;
+    };
     /**
-     * Convert message to string representation
-     * @returns {string} - String with timestamp and body
+     * Convert message to a string with ISO timestamp.
+     *
+     * @returns {string}
      */
     toString(): string;
     #private;
@@ -85,7 +102,7 @@ export type MessageInput = {
      */
     body?: any;
     /**
-     * - Created at time.
+     * - Creation timestamp.
      */
-    time?: Date | undefined;
+    time?: number | Date | undefined;
 };
