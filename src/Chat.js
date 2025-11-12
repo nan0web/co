@@ -2,26 +2,33 @@ import Message from "./Message.js"
 import Contact from "./Contact.js"
 
 /**
- * Chat message class
- * Represents a message in a chat with an author and optional next message
+ * Chat message class.
+ *
+ * Represents a message in a chat with an author and optional next message,
+ * forming a singly linked list of chat entries.
+ *
+ * @class Chat
+ * @extends Message
  */
 export default class Chat extends Message {
 	/** @type {Contact} */
 	author
 
-	/** @type {Chat?} */
+	/** @type {Chat|null} */
 	next
 
 	/**
-	 * Create a new Chat instance
-	 * @param {object} [input={}] - Chat properties or body string
-	 * @param {Contact} [input.author] - Message author
-	 * @param {Chat} [input.next] - Next message in chat
-	 * @param {any} [input.body] - Message body
-	 * @param {Date} [input.time] - Message timestamp
+	 * Create a new Chat instance.
+	 *
+	 * @param {object} [input={}] - Chat properties or a raw string.
+	 * @param {Contact} [input.author] - Message author.
+	 * @param {Chat} [input.next] - Next message in chat chain.
+	 * @param {any} [input.body] - Message body.
+	 * @param {Date|number} [input.time] - Message timestamp.
 	 */
 	constructor(input = {}) {
-		if ("string" ===  typeof input) {
+		if ("string" === typeof input) {
+			// When a raw string is passed, treat it as body content.
 			input = { body: Chat.parse(input) }
 		}
 		const {
@@ -37,8 +44,9 @@ export default class Chat extends Message {
 	}
 
 	/**
-	 * Get the size of the chat chain
-	 * @returns {number} - Number of messages in the chain
+	 * Get the size of the chat chain.
+	 *
+	 * @returns {number} Number of messages in the chain.
 	 */
 	get size() {
 		let i = 1
@@ -51,19 +59,21 @@ export default class Chat extends Message {
 	}
 
 	/**
-	 * Get the most recent message in the chat chain
-	 * @returns {Chat} - Most recent chat message
+	 * Get the most recent (last) message in the chat chain.
+	 *
+	 * @returns {Chat} The last chat message.
 	 */
 	get recent() {
-		let next = this
-		// @ts-ignore
-		while (next.next) next = next.next
-		return next
+		let current = this
+		// @ts-ignore – `next` may be null.
+		while (current.next) current = current.next
+		return current
 	}
 
 	/**
-	 * Convert chat to string representation
-	 * @returns {string} - String with timestamp, author and body
+	 * Convert chat to string representation.
+	 *
+	 * @returns {string} String with timestamp, author and body, separated by "---" for each message.
 	 */
 	toString() {
 		return [
@@ -74,9 +84,10 @@ export default class Chat extends Message {
 	}
 
 	/**
-	 * Create Chat instance from input
-	 * @param {any} input - Input to create chat from
-	 * @returns {Chat} - Chat instance
+	 * Create Chat instance from input.
+	 *
+	 * @param {any} input - Input to create chat from.
+	 * @returns {Chat}
 	 */
 	static from(input) {
 		if (input instanceof Chat) return input
@@ -95,25 +106,27 @@ export default class Chat extends Message {
 	}
 
 	/**
-	 * Escape chat body to prevent injection
-	 * @param {any} body - Body to escape
-	 * @returns {string} - Escaped body
+	 * Escape chat body to prevent injection of message separators.
+	 *
+	 * @param {any} body - Body to escape.
+	 * @returns {string} Escaped body string.
 	 */
 	static escape(body) {
 		if (typeof body !== "string") {
 			body = String(body)
 		}
-		// Escape sequences that could be interpreted as message separators
+		// Escape sequences that could be interpreted as message separators.
 		return body.replace(/---\n/g, "--- \n")
 	}
 
 	/**
-	 * Parse string chat into array of messages
-	 * @param {string} chat - String chat to parse
-	 * @returns {Array} - Array of parsed message objects
+	 * Parse a raw chat string into an array of message objects.
+	 *
+	 * @param {string} chat - String chat to parse.
+	 * @returns {Array} Array of parsed message objects.
 	 */
 	static parse(chat) {
-		// Split by message separator and filter out empty parts
+		// Split by message separator and filter out empty parts.
 		return chat.split("---\n").filter(part => part.trim() !== "")
 	}
 }

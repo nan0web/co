@@ -1,35 +1,8 @@
 #!/usr/bin/env node
 
-import Message, { Command } from "../src/index.js"
+import { Command } from "@nan0web/ui-cli"
 import { pressAnyKey } from "./simple-demos.js"
-
-class InitializeMessage extends Message {
-	/** @type {string} */
-	template = "default"
-
-	constructor(input = {}) {
-		super(input)
-		const {
-			template = this.template,
-		} = input
-		this.template = String(template)
-	}
-
-	/** @returns {string} */
-	get templateHelp() { return this.t("Template to use") }
-
-	/** @returns {string} */
-	get templateAlias() { return "t" }
-
-	/**
-	 * @param {any} input
-	 * @return {InitializeMessage}
-	 */
-	static from(input) {
-		if (input instanceof InitializeMessage) return input
-		return new InitializeMessage(input)
-	}
-}
+import InitMessage from "./messages/InitMessage.js"
 
 export async function runCommandExampleDemo(console) {
 	console.clear()
@@ -69,7 +42,7 @@ export async function runCommandExampleDemo(console) {
 	const initCommand = new Command({
 		name: "init",
 		help: "Initialize a repository",
-		Message: InitializeMessage,
+		Message: InitMessage,
 		options: {
 			template: [String, "default", "Template to use", "t"]
 		}

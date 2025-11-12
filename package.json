@@ -42,15 +42,16 @@
 		"messaging",
 		"nan0web"
 	],
-	"author": "ЯRаСлав YaRaSLove <support@yaro.page>",
+	"author": "ЯRаСлав (YaRaSLove) <support@yaro.page>",
 	"license": "ISC",
 	"packageManager": "pnpm@10.11.0",
 	"devDependencies": {
-		"@nan0web/log": "workspace:*",
-		"@nan0web/release": "workspace:*",
-		"@nan0web/test": "workspace:*",
-		"@nan0web/types": "workspace:*",
-		"@nan0web/ui-cli": "workspace:*",
+		"@nan0web/event": "^1.0.0",
+		"@nan0web/log": "1.0.0",
+		"@nan0web/release": "1.0.1",
+		"@nan0web/test": "1.0.3",
+		"@nan0web/types": "1.2.0",
+		"@nan0web/ui-cli": "1.0.0",
 		"husky": "^9.1.7"
 	}
 }

@@ -3,44 +3,34 @@ import assert from "node:assert/strict"
 import FS from "@nan0web/db-fs"
 import { NoConsole } from "@nan0web/log"
 import {
-	DatasetParser, // use for .datasets with it("How to ...?"
-	DocsParser, // use for .md with it("How to ...?"
-	runSpawn, // use for running commands
+	DatasetParser,
+	DocsParser,
+	runSpawn,
 } from "@nan0web/test"
 import {
 	Chat,
-	Command,
-	CommandError,
-	CommandMessage,
 	Contact,
 	Language,
 	Message,
-	str2argv
+	InputMessage,
+	OutputMessage,
+	App,
 } from "./index.js"
 
 const fs = new FS()
 let pkg
 
-// Load package.json once before tests
 before(async () => {
-	const doc = await fs.loadDocument("package.json", {})
-	pkg = doc || {}
+	pkg = await fs.loadDocument("package.json", {})
 })
 
 let console = new NoConsole()
 
-beforeEach((info) => {
+beforeEach(() => {
 	console = new NoConsole()
 })
 
-/**
- * Core test suite that also serves as the source for README generation.
- *
- * The block comments inside each `it` block are extracted to build
- * the final `README.md`. Keeping the comments here ensures the
- * documentation stays close to the code.
- */
-function testRender() {
+function docs() {
 	/**
 	 * @docs
 	 * # @nan0web/co
@@ -51,20 +41,23 @@ function testRender() {
 	 *
 	 * ## Description
 	 *
-	 * The `@nan0web/co` package provides a minimal yet powerful foundation for message-based communication systems and contact handling.
+	 * The `@nan0web/co` package provides a minimal yet powerful foundation for
+	 * message‑based communication systems and contact handling.
+	 *
 	 * Core classes:
 	 *
 	 * - `Message` — a base class for representing generic messages with timestamps.
 	 * - `Chat` — represents chat messages and chains.
 	 * - `Contact` — parses and represents contact information with specific URI schemes.
-	 * - `Language` — handles localization data including name, icon, code, and locale.
-	 * - `Command` — a class for defining CLI commands with options and arguments.
-	 * - `CommandMessage` — an extension of `Message`, designed for handling command-line-style messages.
-	 * - `CommandOption` — represents individual options or arguments for a command.
-	 * - `CommandError` — custom error class for command-related errors.
+	 * - `Language` — handles localisation data including name, icon, code and locale.
+	 * - `I18nMessage` — extends `Message` with translation support.
+	 * - `InputMessage` / `OutputMessage` — UI‑oriented message adapters.
+	 * - `App` — minimal event‑driven application core.
+	 *
+	 * Use `@nan0web/ui-cli` for CLI‑specific commands (e.g. parsing `process.argv` to Messages).
 	 *
 	 * These classes are perfect for building parsers,
-	 * CLI tools, communication protocols, message validation layers,
+	 * communication protocols, message validation layers,
 	 * and contact or language data management.
 	 *
 	 * ## Installation
@@ -77,6 +70,7 @@ function testRender() {
 		 */
 		assert.equal(pkg.name, "@nan0web/co")
 	})
+
 	/**
 	 * @docs
 	 */
@@ -88,6 +82,7 @@ function testRender() {
 		 */
 		assert.equal(pkg.name, "@nan0web/co")
 	})
+
 	/**
 	 * @docs
 	 */
@@ -106,7 +101,7 @@ function testRender() {
 	 *
 	 * ### Basic Message
 	 *
-	 * Messages contain body and time when they were created
+	 * Messages contain body and time when they were created.
 	 */
 	it("How to create a Message instance from string?", () => {
 		//import { Message } from '@nan0web/co'
@@ -116,8 +111,10 @@ function testRender() {
 			["info", msg.time.toISOString() + " Hello world"]
 		])
 	})
+
 	/**
 	 * @docs
+	 * Messages can be restored from old timestamp.
 	 */
 	it("How to create a Message instance from object?", () => {
 		//import { Message } from '@nan0web/co'
@@ -132,33 +129,36 @@ function testRender() {
 	 * @docs
 	 * ### Chat Messages
 	 *
-	 * Chat creates a message chain with authors
+	 * Chat creates a message chain with authors.
 	 */
 	it("How to create a message chain with authors in a chat?", () => {
 		const alice = Contact.from("alice@example.com")
-		const bob = Contact.from("bob@example.com")
+		const bob = Contact.from("+1234567890")
 
 		const chat = new Chat({
 			author: alice,
 			body: "Hi Bob!",
 			next: new Chat({
 				author: bob,
-				body: "Hello Alice!"
-			})
+				body: "Hello Alice!",
+			}),
 		})
 
-		const str = String(chat)
-		console.info(str)
-		assert.ok(console.output()[0][1].includes("Hi Bob!"))
-		assert.ok(console.output()[0][1].includes("Hello Alice!"))
-		assert.ok(console.output()[0][1].includes("---"))
+		console.info(String(chat))
+		// 2025-11-12T11:02:37.033Z mailto:alice@example.com
+		// Hi Bob!
+		// ---
+		// 2025-11-12T11:02:37.033Z tel:+1234567890
+		// Hello Alice!
+		assert.ok(console.output()[0][1].includes(" mailto:alice@example.com\nHi Bob!\n---\n"))
+		assert.ok(console.output()[0][1].includes(" tel:+1234567890\nHello Alice!"))
 	})
 
 	/**
 	 * @docs
 	 * ### Contact Handling
 	 *
-	 * Contact handles different URIs and string inputs properly
+	 * Contact handles different URIs and string inputs properly.
 	 */
 	it("How to create contact with different URIs and string inputs properly?", () => {
 		// Create direct instances
@@ -185,123 +185,110 @@ function testRender() {
 	 * @docs
 	 * ### Language Handling
 	 *
-	 * Language handles ISO codes and string conversion
+	 * Language handles ISO codes and string conversion.
 	 */
 	it("How to create a Language instance?", () => {
 		const lang = new Language({
 			name: "English",
 			icon: "🇬🇧",
 			code: "en",
-			locale: "en-US"
+			locale: "en-US",
 		})
-
-		console.info(String(lang))
-		assert.ok(String(console.output()[0][1]).includes("English"))
-		assert.ok(String(console.output()[0][1]).includes("🇬🇧"))
+		console.info(String(lang)) // ← English 🇬🇧
+		assert.equal(console.output()[0][1], "English 🇬🇧")
 	})
 
 	/**
 	 * @docs
-	 * ### Command with Options and Arguments
-	 *
-	 * Command can be configured with options and arguments
+	 * ### InputMessage & OutputMessage usage
 	 */
-	it("How to create a Command configured with options and arguments?", () => {
-		const cmd = new Command({
-			name: "example",
-			help: "An example command",
-			options: {
-				verbose: [Boolean, false, "Enable verbose output", "v"],
-				file: [String, "input.txt", "Input file path", "f"]
-			},
-			arguments: {
-				name: [String, "", "Name of the item to process"],
-				"*": [String, "Additional items"]
-			}
-		})
-
-		const parsed = cmd.parse(["--verbose", "--file", "config.json", "item1", "item2"])
-		console.info(parsed.opts.verbose)
-		console.info(parsed.opts.file)
-		console.info(parsed.args)
-
-		assert.ok(parsed instanceof CommandMessage)
-		assert.strictEqual(console.output()[0][1], true)
-		assert.strictEqual(console.output()[1][1], "config.json")
-		assert.deepStrictEqual(console.output()[2][1], ["item1", "item2"])
+	it("How to use InputMessage and OutputMessage?", () => {
+		//import { InputMessage, OutputMessage } from "@nan0web/co"
+		const inMsg = new InputMessage({ value: "user input", options: ["yes", "no"] })
+		const outMsg = new OutputMessage({ content: ["Result:", "Success"], type: OutputMessage.TYPES.SUCCESS })
+		console.info(inMsg.toString()) // ← TIMESTAMP user input
+		console.info(outMsg.content) // ← ["Result:", "Success"]
+		assert.ok(console.output()[0][1].includes("user input"))
+		assert.deepStrictEqual(console.output()[1][1], ["Result:", "Success"])
 	})
 
 	/**
 	 * @docs
-	 * ### Subcommands
-	 *
-	 * Command supports subcommands
+	 * ### App core example
 	 */
-	it("How to add sub-commands to main Command instance?", () => {
-		const initCmd = new Command({
-			name: "init",
-			help: "Initialize a new project"
-		})
-		initCmd.addOption("version", Boolean, false, "Show version", "V")
-
-		const mainCmd = new Command({
-			name: "mycli",
-			help: "My CLI tool",
-			subcommands: [initCmd]
-		})
-
-		const msg = mainCmd.parse(["init", "-V"])
-		console.info(msg.subCommandMessage.opts.version) // true
-		console.info(msg.subCommandMessage.args) // ["init"]
-		console.info(msg.subCommandMessage.argv) // []
-		assert.strictEqual(console.output()[0][1], true)
-		assert.deepStrictEqual(console.output()[1][1], ["init"])
-		assert.deepStrictEqual(console.output()[2][1], [])
+	it("How to use the App core class?", async () => {
+		//import { App } from "@nan0web/co"
+		const app = new App()
+		const im = new app.InputMessage({ value: "ping" })
+		const gen = app.run(im)
+		const { value, done } = await gen.next()
+		const { done: done2 } = await gen.next()
+		console.info(value) // ← OutputMessage { body: ["Run"], ... }
+		console.info(done) // ← false
+		console.info(done2) // ← true
+		assert.ok(console.output()[0][1] instanceof app.OutputMessage)
+		assert.equal(console.output()[1][1], false)
+		assert.equal(console.output()[2][1], true)
 	})
 
 	/**
 	 * @docs
-	 * ### Errors
+	 * ### Message body parsing with static meta configuration
 	 *
-	 * CommandError provides detailed error messages for command validation
+	 * The `Message.parseBody` method can transform raw input objects into a
+	 * well‑defined body using a static schema.  Below is a concise example
+	 * that mirrors the test suite’s `ParseBody` definition.
+	 *
+	 * The test ensures the parsing behaves exactly as described.
 	 */
-	it("How to handle errors in Commands?", () => {
-		try {
-			const cmd = new Command({
-				name: "example",
-				options: {
-					count: [Number, 0, "Count value"]
-				}
-			})
-			const msg = cmd.parse(["example", "--count", "invalid"])
-			console.info(String(msg)) // ← no output because of thrown error
-		} catch (err) {
-			if (err instanceof CommandError) {
-				console.error(err.message) // ← Invalid number for count: invalid
-				console.error(JSON.stringify(err.data)) // ← {"providedValue":"invalid"}
-				//}
-				//}
-				assert.ok(err.message.includes("Invalid number"))
-			}
+	it("How to parse a message body using Message.parseBody()?", () => {
+		//import { Message } from "@nan0web/co"
+		const Body = {
+			// Show help flag (alias: h)
+			help: { alias: "h", defaultValue: false },
+
+			// Output format (alias: fmt)
+			format: { alias: "fmt", defaultValue: "txt", options: ["txt", "md", "html"] },
+
+			// Verbose flag (no alias)
+			verbose: { defaultValue: false }
 		}
-		assert.deepEqual(console.output(), [
-			["error", "Invalid number for count: invalid"],
-			["error", `{"providedValue":"invalid"}`],
-		])
+		const raw = { h: true, fmt: "md", verbose: 1 }
+		const parsed = Message.parseBody(raw, Body)
+		console.info(parsed)
+		// { help: true, format: "md", verbose: true }
+		assert.deepStrictEqual(console.output()[0][1], { help: true, format: "md", verbose: true })
 	})
 
 	/**
 	 * @docs
-	 * ### Utility Functions
-	 *
-	 * Access utilities without importing the entire package
+	 * You can use classes with static and typedef for better IDE autocomplete support
 	 */
-	it("How to use utility functions individually?", () => {
-		//import { str2argv } from '@nan0web/co/utils'
-		const result = str2argv('"Hello world" --option value')
-		console.log(result) // ← ['Hello world', '--option', 'value']
-		assert.deepEqual(result, ['Hello world', '--option', 'value'])
+	it("How to parse a message body using Message.parseBody()?", () => {
+		//import { Message } from "@nan0web/co"
+		class Body {
+			// Show help flag
+			static help = { alias: "h", defaultValue: false }
+			/** @type {boolean} */
+			help = false
+
+			// Output format
+			static format = { alias: "fmt", defaultValue: "txt", options: ["txt", "md", "html"] }
+			/** @type {"txt" | "md" | "html"} */
+			format = "md" // defaultValue has priority over property value
+
+			// Verbose flag (to cast value type or defaultValue must be defined in the static meta)
+			static verbose = { alias: "v", type: "boolean" }
+			/** @type {boolean} */
+			verbose = false
+		}
+		const raw = { h: true, fmt: "md", v: 1 }
+		const parsed = Message.parseBody(raw, Body)
+		console.info(parsed)
+		// { help: true, format: "md", verbose: true }
+		assert.deepStrictEqual(console.output()[0][1], { help: true, format: "md", verbose: true })
 	})
+
 	/**
 	 * @docs
 	 * ## API
@@ -316,6 +303,7 @@ function testRender() {
 	 *   * `toObject()` – returns `{ body, time }`.
 	 *   * `toString()` – formats timestamp and body as a string.
 	 *   * `static from(input)` – instantiates from string or object.
+	 *   * `validate()` – checks body against schema (with `getErrors()`).
 	 *
 	 * ### Chat
 	 *
@@ -329,7 +317,7 @@ function testRender() {
 	 *   * `get size` – returns the chain length.
 	 *   * `get recent` – returns the last chat message in the chain.
 	 *   * `toString()` – formats the entire chat chain.
-	 *   * `static from(input)` – builds a chat chain from array-like input.
+	 *   * `static from(input)` – builds a chat chain from array‑like input.
 	 *
 	 * ### Contact
 	 *
@@ -350,110 +338,42 @@ function testRender() {
 	 * * **Properties**
 	 *   * `name` – language name in its native form.
 	 *   * `icon` – flag emoji.
-	 *   * `code` – ISO 639-1 language code.
+	 *   * `code` – ISO 639‑1 language code.
 	 *   * `locale` – specific locale identifier.
 	 *
 	 * * **Methods**
 	 *   * `toString()` – combines `name` and `icon`.
 	 *   * `static from(input)` – creates or returns a Language instance.
-	 *
-	 * ### Command
-	 *
-	 * * **Properties**
-	 *   * `name` – command name for usage.
-	 *   * `help` – command description.
-	 *   * `options` – map of command options.
-	 *   * `arguments` – map of expected arguments.
-	 *   * `subcommands` – nested commands map.
-	 *   * `aliases` – shortcut aliases for flags.
-	 *
-	 * * **Methods**
-	 *   * `addOption(name, type, def, help?, alias?)` – adds a command option.
-	 *   * `addArgument(name, type, def, help?, required?)` – adds a command argument.
-	 *   * `addSubcommand(subcommand)` – adds a subcommand.
-	 *   * `parse(argv)` – parses input args and returns CommandMessage.
-	 *   * `runHelp()` – generates and returns help output.
-	 *   * `generateHelp()` – returns formatted help text.
-	 *
-	 * ### CommandMessage
-	 *
-	 * Extends `Message`.
-	 *
-	 * * **Properties**
-	 *   * `name` – used by subcommands.
-	 *   * `args` – command arguments.
-	 *   * `opts` – parsed flag values.
-	 *   * `children` – nested subcommand messages.
-	 *
-	 * * **Methods**
-	 *   * `get subCommand` – returns the name of the first subcommand, if any.
-	 *   * `add(message)` – appends a child message.
-	 *   * `updateBody()` – updates the body based on current name, argv, and opts.
-	 *   * `toString()` – rebuilds full command input string.
-	 *   * `static parse(args)` – parses args into a CommandMessage.
-	 *   * `static from(input)` – returns unchanged or creates new instance.
-	 *
-	 * ### CommandOption
-	 *
-	 * * **Properties**
-	 *   * `name` – option identifier.
-	 *   * `type` – expected value type (Number, String, Boolean, Array or Class).
-	 *   * `def` – default value if not provided.
-	 *   * `help` – documentation text.
-	 *   * `alias` – short flag alias.
-	 *   * `required` – if true, the argument is mandatory.
-	 *
-	 * * **Methods**
-	 *   * `getDefault()` – returns `def`.
-	 *   * `isOptional()` – returns true if default is set or required is false.
-	 *   * `toObject()` – formats option into a readable object for help generation.
-	 *   * `static from()` – accepts raw config in multiple formats and creates an instance.
-	 *
-	 * ### CommandError
-	 *
-	 * Extends `Error`.
-	 *
-	 * * **Properties**
-	 *   * `message` – error description.
-	 *   * `data` – additional error context for programmatic analysis.
-	 *
-	 * * **Methods**
-	 *   * `toString()` – returns formatted error with message and JSON data.
 	 */
 	it("All exported classes should pass basic test to ensure API examples work", () => {
 		assert.ok(Chat)
-		assert.ok(Command)
-		assert.ok(CommandError)
-		assert.ok(CommandMessage)
 		assert.ok(Contact)
 		assert.ok(Language)
 		assert.ok(Message)
+		assert.ok(InputMessage)
+		assert.ok(OutputMessage)
+		assert.ok(App)
 	})
 
-	/**
-	 * @docs
-	 * ## Java•Script
-	 */
 	it("Uses `d.ts` files for autocompletion", () => {
 		assert.equal(pkg.types, "./types/index.d.ts")
 	})
 
 	/**
 	 * @docs
-	 * ## CLI Playground
-	 *
+	 * ## Playground
 	 */
 	it("How to run playground script?", async () => {
 		/**
 		 * ```bash
 		 * # Clone the repository and run the CLI playground
 		 * git clone https://github.com/nan0web/co.git
-		 * cd i18n
+		 * cd co
 		 * npm install
-		 * npm run playground
+		 * npm run play
 		 * ```
 		 */
-		assert.ok(String(pkg.scripts?.playground))
+		assert.ok(pkg.scripts?.play)
 		const response = await runSpawn("git", ["remote", "get-url", "origin"])
 		assert.ok(response.code === 0, "git command fails (e.g., not in a git repo)")
 		assert.ok(response.text.trim().endsWith(":nan0web/co.git"))
@@ -463,39 +383,39 @@ function testRender() {
 	 * @docs
 	 * ## Contributing
 	 */
-	it("How to contribute? - [check here](./CONTRIBUTING.md)", async () => {
+	it("How to contribute? - [check here]($pkgURL/blob/main/CONTRIBUTING.md)", async () => {
 		assert.equal(pkg.scripts?.precommit, "npm test")
 		assert.equal(pkg.scripts?.prepush, "npm test")
 		assert.equal(pkg.scripts?.prepare, "husky")
+
 		const text = await fs.loadDocument("CONTRIBUTING.md")
 		const str = String(text)
-		assert.ok(str.includes("# Contributing"))
+		assert.ok(str.includes('# Contributing'))
 	})
 
 	/**
 	 * @docs
 	 * ## License
 	 */
-	it("How to license ISC? - [check here](./LICENSE)", async () => {
+	it("How to license? - [ISC LICENSE]($pkgURL/blob/main/LICENSE) file.", async () => {
 		/** @docs */
-		const text = await fs.loadDocument("LICENSE")
-		assert.ok(String(text).includes("ISC"))
+		const text = await fs.loadDocument('LICENSE')
+		assert.ok(String(text).includes('ISC'))
 	})
 }
 
-describe("README.md testing", testRender)
+describe("README.md testing", docs)
 
 describe("Rendering README.md", async () => {
-	let text = ""
-	const format = new Intl.NumberFormat("en-US").format
 	const parser = new DocsParser()
-	text = String(parser.decode(testRender))
+	const text = String(parser.decode(docs))
 	await fs.saveDocument("README.md", text)
+
 	const dataset = DatasetParser.parse(text, pkg.name)
 	await fs.saveDocument(".datasets/README.dataset.jsonl", dataset)
 
-	it(`document is rendered in README.md [${format(Buffer.byteLength(text))}b]`, async () => {
-		const text = await fs.loadDocument("README.md")
-		assert.ok(text.includes("## License"))
+	it(`document is rendered [${Intl.NumberFormat("en-US").format(Buffer.byteLength(text))}b]`, async () => {
+		const saved = await fs.loadDocument("README.md")
+		assert.ok(saved.includes("## License"), "README was not generated")
 	})
 })

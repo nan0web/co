@@ -2,26 +2,27 @@
 
 Communication starts here with a simple Message.
 
-|[Status](https://github.com/nan0web/monorepo/blob/main/system.md#написання-сценаріїв)|Documentation|Test coverage|Features|Npm version|
-|---|---|---|---|---|
- |🟢 `98.5%` |🧪 [English 🏴󠁧󠁢󠁥󠁮󠁧󠁿](https://github.com/nan0web/co/blob/main/README.md)<br />[Українською 🇺🇦](https://github.com/nan0web/co/blob/main/docs/uk/README.md) |🟢 `91.5%` |✅ d.ts 📜 system.md 🕹️ playground |1.0.1 |
+<!-- %PACKAGE_STATUS% -->
 
 ## Description
 
-The `@nan0web/co` package provides a minimal yet powerful foundation for message-based communication systems and contact handling.
+The `@nan0web/co` package provides a minimal yet powerful foundation for
+message‑based communication systems and contact handling.
+
 Core classes:
 
 - `Message` — a base class for representing generic messages with timestamps.
 - `Chat` — represents chat messages and chains.
 - `Contact` — parses and represents contact information with specific URI schemes.
-- `Language` — handles localization data including name, icon, code, and locale.
-- `Command` — a class for defining CLI commands with options and arguments.
-- `CommandMessage` — an extension of `Message`, designed for handling command-line-style messages.
-- `CommandOption` — represents individual options or arguments for a command.
-- `CommandError` — custom error class for command-related errors.
+- `Language` — handles localisation data including name, icon, code and locale.
+- `I18nMessage` — extends `Message` with translation support.
+- `InputMessage` / `OutputMessage` — UI‑oriented message adapters.
+- `App` — minimal event‑driven application core.
+
+Use `@nan0web/ui-cli` for CLI‑specific commands (e.g. parsing `process.argv` to Messages).
 
 These classes are perfect for building parsers,
-CLI tools, communication protocols, message validation layers,
+communication protocols, message validation layers,
 and contact or language data management.
 
 ## Installation
@@ -45,7 +46,7 @@ yarn add @nan0web/co
 
 ### Basic Message
 
-Messages contain body and time when they were created
+Messages contain body and time when they were created.
 
 How to create a Message instance from string?
 ```js
@@ -53,6 +54,7 @@ import { Message } from '@nan0web/co'
 const msg = Message.from("Hello world")
 console.info(String(msg)) // 2023-04-01T10:00:00 Hello world
 ```
+Messages can be restored from old timestamp.
 
 How to create a Message instance from object?
 ```js
@@ -62,28 +64,30 @@ console.info(String(msg)) // 2000-01-01T00:00:00.000Z Hello 2000
 ```
 ### Chat Messages
 
-Chat creates a message chain with authors
+Chat creates a message chain with authors.
 
 How to create a message chain with authors in a chat?
 ```js
 const alice = Contact.from("alice@example.com")
-const bob = Contact.from("bob@example.com")
-
+const bob = Contact.from("+1234567890")
 const chat = new Chat({
 	author: alice,
 	body: "Hi Bob!",
 	next: new Chat({
 		author: bob,
-		body: "Hello Alice!"
-	})
+		body: "Hello Alice!",
+	}),
 })
-
-const str = String(chat)
-console.info(str)
+console.info(String(chat))
+// 2025-11-12T11:02:37.033Z mailto:alice@example.com
+// Hi Bob!
+// ---
+// 2025-11-12T11:02:37.033Z tel:+1234567890
+// Hello Alice!
 ```
 ### Contact Handling
 
-Contact handles different URIs and string inputs properly
+Contact handles different URIs and string inputs properly.
 
 How to create contact with different URIs and string inputs properly?
 ```js
@@ -91,19 +95,17 @@ How to create contact with different URIs and string inputs properly?
 const email = new Contact({ type: Contact.EMAIL, value: "test@example.com" })
 const phone = Contact.from("+123456") // Auto-detected as telephone
 const address = Contact.parse("123 Main St")  // Auto-detected as address
-
 // Parse types
 console.info(email.toString()) // "mailto:test@example.com"
 console.info(phone.toString()) // "tel:+123456"
 console.info(address.toString()) // "address:123 Main St"
-
 // Auto-detect from strings
 const website = Contact.parse("https://example.com") // Auto-detected as URL
 console.info(website) // "https://example.com"
 ```
 ### Language Handling
 
-Language handles ISO codes and string conversion
+Language handles ISO codes and string conversion.
 
 How to create a Language instance?
 ```js
@@ -111,90 +113,81 @@ const lang = new Language({
 	name: "English",
 	icon: "🇬🇧",
 	code: "en",
-	locale: "en-US"
+	locale: "en-US",
 })
-
-console.info(String(lang))
+console.info(String(lang)) // ← English 🇬🇧
 ```
-### Command with Options and Arguments
+### InputMessage & OutputMessage usage
 
-Command can be configured with options and arguments
-
-How to create a Command configured with options and arguments?
+How to use InputMessage and OutputMessage?
 ```js
-const cmd = new Command({
-	name: "example",
-	help: "An example command",
-	options: {
-		verbose: [Boolean, false, "Enable verbose output", "v"],
-		file: [String, "input.txt", "Input file path", "f"]
-	},
-	arguments: {
-		name: [String, "", "Name of the item to process"],
-		"*": [String, "Additional items"]
-	}
-})
-
-const parsed = cmd.parse(["--verbose", "--file", "config.json", "item1", "item2"])
-console.info(parsed.opts.verbose)
-console.info(parsed.opts.file)
-console.info(parsed.args)
-
+import { InputMessage, OutputMessage } from "@nan0web/co"
+const inMsg = new InputMessage({ value: "user input", options: ["yes", "no"] })
+const outMsg = new OutputMessage({ content: ["Result:", "Success"], type: OutputMessage.TYPES.SUCCESS })
+console.info(inMsg.toString()) // ← TIMESTAMP user input
+console.info(outMsg.content) // ← ["Result:", "Success"]
 ```
-### Subcommands
+### App core example
 
-Command supports subcommands
-
-How to add sub-commands to main Command instance?
+How to use the App core class?
 ```js
-const initCmd = new Command({
-	name: "init",
-	help: "Initialize a new project"
-})
-initCmd.addOption("version", Boolean, false, "Show version", "V")
-
-const mainCmd = new Command({
-	name: "mycli",
-	help: "My CLI tool",
-	subcommands: [initCmd]
-})
-
-const msg = mainCmd.parse(["init", "-V"])
-console.info(msg.subCommandMessage.opts.version) // true
-console.info(msg.subCommandMessage.args) // ["init"]
-console.info(msg.subCommandMessage.argv) // []
+import { App } from "@nan0web/co"
+const app = new App()
+const im = new app.InputMessage({ value: "ping" })
+const gen = app.run(im)
+const { value, done } = await gen.next()
+const { done: done2 } = await gen.next()
+console.info(value) // ← OutputMessage { body: ["Run"], ... }
+console.info(done) // ← false
+console.info(done2) // ← true
 ```
-### Errors
+### Message body parsing with static meta configuration
 
-CommandError provides detailed error messages for command validation
+The `Message.parseBody` method can transform raw input objects into a
+well‑defined body using a static schema.  Below is a concise example
+that mirrors the test suite’s `ParseBody` definition.
 
-How to handle errors in Commands?
+The test ensures the parsing behaves exactly as described.
+
+How to parse a message body using Message.parseBody()?
 ```js
-try {
-	const cmd = new Command({
-		name: "example",
-		options: {
-			count: [Number, 0, "Count value"]
-		}
-	})
-	const msg = cmd.parse(["example", "--count", "invalid"])
-	console.info(String(msg)) // ← no output because of thrown error
-} catch (err) {
-	if (err instanceof CommandError) {
-		console.error(err.message) // ← Invalid number for count: invalid
-		console.error(JSON.stringify(err.data)) // ← {"providedValue":"invalid"}
-		}
-		}
+import { Message } from "@nan0web/co"
+const Body = {
+	// Show help flag (alias: h)
+	help: { alias: "h", defaultValue: false },
+	// Output format (alias: fmt)
+	format: { alias: "fmt", defaultValue: "txt", options: ["txt", "md", "html"] },
+	// Verbose flag (no alias)
+	verbose: { defaultValue: false }
+}
+const raw = { h: true, fmt: "md", verbose: 1 }
+const parsed = Message.parseBody(raw, Body)
+console.info(parsed)
+// { help: true, format: "md", verbose: true }
 ```
-### Utility Functions
+You can use classes with static and typedef for better IDE autocomplete support
 
-Access utilities without importing the entire package
-
-How to use utility functions individually?
+How to parse a message body using Message.parseBody()?
 ```js
-import { str2argv } from '@nan0web/co/utils'
-const result = str2argv('"Hello world" --option value')
-console.log(result) // ← ['Hello world', '--option', 'value']
+import { Message } from "@nan0web/co"
+class Body {
+	// Show help flag
+	static help = { alias: "h", defaultValue: false }
+	/** @type {boolean} */
+	help = false
+	// Output format
+	static format = { alias: "fmt", defaultValue: "txt", options: ["txt", "md", "html"] }
+	/** @type {"txt" | "md" | "html"} */
+	format = "md" // defaultValue has priority over property value
+	// Verbose flag (to cast value type or defaultValue must be defined in the static meta)
+	static verbose = { alias: "v", type: "boolean" }
+	/** @type {boolean} */
+	verbose = false
+}
+const raw = { h: true, fmt: "md", v: 1 }
+const parsed = Message.parseBody(raw, Body)
+console.info(parsed)
+// { help: true, format: "md", verbose: true }
 ```
 ## API
 
@@ -208,6 +201,7 @@ console.log(result) // ← ['Hello world', '--option', 'value']
   * `toObject()` – returns `{ body, time }`.
   * `toString()` – formats timestamp and body as a string.
   * `static from(input)` – instantiates from string or object.
+  * `validate()` – checks body against schema (with `getErrors()`).
 
 ### Chat
 
@@ -221,7 +215,7 @@ Extends `Message`.
   * `get size` – returns the chain length.
   * `get recent` – returns the last chat message in the chain.
   * `toString()` – formats the entire chat chain.
-  * `static from(input)` – builds a chat chain from array-like input.
+  * `static from(input)` – builds a chat chain from array‑like input.
 
 ### Contact
 
@@ -242,97 +236,30 @@ Extends `Message`.
 * **Properties**
   * `name` – language name in its native form.
   * `icon` – flag emoji.
-  * `code` – ISO 639-1 language code.
+  * `code` – ISO 639‑1 language code.
   * `locale` – specific locale identifier.
 
 * **Methods**
   * `toString()` – combines `name` and `icon`.
   * `static from(input)` – creates or returns a Language instance.
 
-### Command
-
-* **Properties**
-  * `name` – command name for usage.
-  * `help` – command description.
-  * `options` – map of command options.
-  * `arguments` – map of expected arguments.
-  * `subcommands` – nested commands map.
-  * `aliases` – shortcut aliases for flags.
-
-* **Methods**
-  * `addOption(name, type, def, help?, alias?)` – adds a command option.
-  * `addArgument(name, type, def, help?, required?)` – adds a command argument.
-  * `addSubcommand(subcommand)` – adds a subcommand.
-  * `parse(argv)` – parses input args and returns CommandMessage.
-  * `runHelp()` – generates and returns help output.
-  * `generateHelp()` – returns formatted help text.
-
-### CommandMessage
-
-Extends `Message`.
-
-* **Properties**
-  * `name` – used by subcommands.
-  * `args` – command arguments.
-  * `opts` – parsed flag values.
-  * `children` – nested subcommand messages.
-
-* **Methods**
-  * `get subCommand` – returns the name of the first subcommand, if any.
-  * `add(message)` – appends a child message.
-  * `updateBody()` – updates the body based on current name, argv, and opts.
-  * `toString()` – rebuilds full command input string.
-  * `static parse(args)` – parses args into a CommandMessage.
-  * `static from(input)` – returns unchanged or creates new instance.
-
-### CommandOption
-
-* **Properties**
-  * `name` – option identifier.
-  * `type` – expected value type (Number, String, Boolean, Array or Class).
-  * `def` – default value if not provided.
-  * `help` – documentation text.
-  * `alias` – short flag alias.
-  * `required` – if true, the argument is mandatory.
-
-* **Methods**
-  * `getDefault()` – returns `def`.
-  * `isOptional()` – returns true if default is set or required is false.
-  * `toObject()` – formats option into a readable object for help generation.
-  * `static from()` – accepts raw config in multiple formats and creates an instance.
-
-### CommandError
-
-Extends `Error`.
-
-* **Properties**
-  * `message` – error description.
-  * `data` – additional error context for programmatic analysis.
-
-* **Methods**
-  * `toString()` – returns formatted error with message and JSON data.
-
 All exported classes should pass basic test to ensure API examples work
 
-## Java•Script
-
-Uses `d.ts` files for autocompletion
-
-## CLI Playground
+## Playground
 
 How to run playground script?
 ```bash
 # Clone the repository and run the CLI playground
 git clone https://github.com/nan0web/co.git
-cd i18n
+cd co
 npm install
-npm run playground
+npm run play
 ```
 
 ## Contributing
 
-How to contribute? - [check here](./CONTRIBUTING.md)
+How to contribute? - [check here]($pkgURL/blob/main/CONTRIBUTING.md)
 
 ## License
 
-How to license ISC? - [check here](./LICENSE)
+How to license? - [ISC LICENSE]($pkgURL/blob/main/LICENSE) file.

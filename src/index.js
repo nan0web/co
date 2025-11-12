@@ -1,34 +1,37 @@
+import App from "./App.js"
 import Chat from "./Chat.js"
 import Contact from "./Contact.js"
 
 import Message from "./Message.js"
 import I18nMessage from "./I18nMessage.js"
+import InputMessage from "./InputMessage.js"
+import OutputMessage from "./OutputMessage.js"
 
 import Language from "./Language.js"
 
-import Command from "./Command/Command.js"
-import CommandError from "./Command/CommandError.js"
-import CommandMessage from "./Command/CommandMessage.js"
-import CommandOption from "./Command/CommandOption.js"
+/**
+ * @typedef {(value: any) => boolean | Error | Error[] | Record<string, boolean | Error[]>} ValidateFn
+ * @this {Message}
+ */
 
-import { str2argv } from "./utils/parse.js"
+/** @typedef {import("./Message.js").MessageInput} MessageInput */
+
+// Remove Command exports from index (move to ui-cli)
+// Deprecated: Command, CommandError, CommandMessage, CommandOption, str2argv
 
 export {
+	App,
+
 	Chat,
 
-	Command,
-	CommandError,
-	CommandOption,
-	CommandMessage,
-
 	Contact,
-
-	Message,
-	I18nMessage,
-
 	Language,
 
-	str2argv,
+	Message,
+	InputMessage,
+	OutputMessage,
+
+	I18nMessage,
 }
 
 export default Message

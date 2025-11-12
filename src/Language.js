@@ -1,6 +1,9 @@
 /**
- * Language class for handling localization data
- * Stores language information including name, icon, code, and locale
+ * Language class for handling localization data.
+ *
+ * Stores language information including name, icon, ISO code, and locale.
+ *
+ * @class Language
  */
 export default class Language {
 	/** @type {string} */
@@ -16,12 +19,13 @@ export default class Language {
 	locale = ""
 
 	/**
-	 * Create a new Language instance
-	 * @param {object} [input={}] - Language properties
-	 * @param {string} [input.name=""] - Language name
-	 * @param {string} [input.icon=""] - Language icon identifier
-	 * @param {string} [input.code=""] - ISO 639-1 language code (e.g. "en", "uk")
-	 * @param {string} [input.locale=""] - Locale identifier (e.g. "en-US", "uk-UA")
+	 * Create a new Language instance.
+	 *
+	 * @param {object} [input={}]
+	 * @param {string} [input.name=""] - Human‑readable language name.
+	 * @param {string} [input.icon=""] - Emoji or icon representing the language.
+	 * @param {string} [input.code=""] - ISO 639‑1 language code (e.g. "en", "uk").
+	 * @param {string} [input.locale=""] - Locale identifier (e.g. "en-US", "uk-UA").
 	 */
 	constructor(input = {}) {
 		const {
@@ -37,17 +41,19 @@ export default class Language {
 	}
 
 	/**
-	 * The stringified version of the language.
-	 * @returns {string}
+	 * Convert language to a human‑readable string.
+	 *
+	 * @returns {string} Concatenation of name and icon.
 	 */
 	toString() {
 		return [this.name, this.icon].filter(Boolean).join(" ")
 	}
 
 	/**
-	 * Factory method to create Language instance
-	 * @param {any} input - Language instance or data for constructor
-	 * @returns {Language} - Language instance
+	 * Factory method to create a Language instance.
+	 *
+	 * @param {any} input - Language instance or plain data.
+	 * @returns {Language}
 	 */
 	static from(input) {
 		if (input instanceof Language) return input
