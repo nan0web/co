@@ -5,6 +5,21 @@
  * @property {Date|number} [input.time] - Creation timestamp.
  */
 /**
+ * @typedef {(value: any) => true | string | string[]} ValidateFn
+ */
+/**
+ * @typedef {Object} MessageBodySchema
+ * @property {string}     [alias]        - Short alias (single‑letter).
+ * @property {any}        [defaultValue] - Default value.
+ * @property {string}     [help]         - Human readable description.
+ * @property {Array}      [options]      - Array of possible options.
+ * @property {RegExp}     [pattern]      - Regular expression pattern for validation.
+ * @property {string}     [placeholder]  - Placeholder for usage (e.g. "<user>").
+ * @property {boolean}    [required]     - Is field required or not.
+ * @property {any}        [type]         - Data type.
+ * @property {ValidateFn} [validate]     - Validate function.
+ */
+/**
  * Base Message class.
  *
  * Provides a timestamped container for arbitrary payload data,
@@ -72,6 +87,7 @@ export default class Message {
     /**
      * Validate body fields according to the static {@link Body} schema.
      *
+     * @deprecated Moved to validate()
      * @returns {Record<string, string[]>} Mapping of field names to error messages.
      */
     getErrors(): Record<string, string[]>;
@@ -90,6 +106,10 @@ export default class Message {
      * @returns {string}
      */
     toString(): string;
+    /**
+     * @returns {Map<string, string>} A map of errors for every incorrect field, empty map if no errors.
+     */
+    validate(): Map<string, string>;
     #private;
 }
 export type MessageInput = {
@@ -105,4 +125,43 @@ export type MessageInput = {
      * - Creation timestamp.
      */
     time?: number | Date | undefined;
+};
+export type ValidateFn = (value: any) => true | string | string[];
+export type MessageBodySchema = {
+    /**
+     * - Short alias (single‑letter).
+     */
+    alias?: string | undefined;
+    /**
+     * - Default value.
+     */
+    defaultValue?: any;
+    /**
+     * - Human readable description.
+     */
+    help?: string | undefined;
+    /**
+     * - Array of possible options.
+     */
+    options?: any[] | undefined;
+    /**
+     * - Regular expression pattern for validation.
+     */
+    pattern?: RegExp | undefined;
+    /**
+     * - Placeholder for usage (e.g. "<user>").
+     */
+    placeholder?: string | undefined;
+    /**
+     * - Is field required or not.
+     */
+    required?: boolean | undefined;
+    /**
+     * - Data type.
+     */
+    type?: any;
+    /**
+     * - Validate function.
+     */
+    validate?: ValidateFn | undefined;
 };

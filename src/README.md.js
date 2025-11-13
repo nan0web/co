@@ -262,31 +262,88 @@ function docs() {
 
 	/**
 	 * @docs
-	 * You can use classes with static and typedef for better IDE autocomplete support
+	 * ### Message validation schema
+	 *
+	 * `Message` now supports a **static `Body` schema** that can describe:
+	 *
+	 * - **Aliases** – alternative short keys.
+	 * - **Default values** – applied when a field is missing.
+	 * - **Required flags** – enforce presence.
+	 * - **Pattern matching** – regular‑expression validation.
+	 * - **Enumerated options** – restrict values to a set.
+	 * - **Custom validation functions** – arbitrary checks returning `true` or an error string.
+	 *
+	 * Validation is performed by `msg.validate()` returning a `Map<string, string>` of errors,
+	 * while `msg.getErrors()` provides the legacy `Record<string, string[]>` format.
+	 *
+	 * This enables powerful, declarative validation directly on message instances and
+	 * increasing quality of IDE autocomplete feature.
 	 */
-	it("How to parse a message body using Message.parseBody()?", () => {
-		//import { Message } from "@nan0web/co"
-		class Body {
-			// Show help flag
-			static help = { alias: "h", defaultValue: false }
-			/** @type {boolean} */
-			help = false
-
-			// Output format
-			static format = { alias: "fmt", defaultValue: "txt", options: ["txt", "md", "html"] }
-			/** @type {"txt" | "md" | "html"} */
-			format = "md" // defaultValue has priority over property value
-
-			// Verbose flag (to cast value type or defaultValue must be defined in the static meta)
-			static verbose = { alias: "v", type: "boolean" }
-			/** @type {boolean} */
-			verbose = false
+	it("How to validate a message using a custom schema?", () => {
+		class MyBody {
+			/** @type {string} */
+			name
+			static name = {
+				alias: "n",
+				required: true,
+				pattern: /^[a-z]+$/
+			}
+			/** @type {string} */
+			title
+			static title = {
+				pattern: /^.{3,}$/,
+				defaultValue: ""
+			}
+			/** @type {string} */
+			mode
+			static mode = {
+				options: ["auto", "manual"],
+				defaultValue: "auto"
+			}
+			/** @type {string} */
+			custom
+			static custom = {
+				validate: v => v.length > 5 ? true : "Too short"
+			}
+			constructor(input = {}) {
+				const {
+					name,
+					title = MyBody.title.defaultValue,
+					mode = MyBody.mode.defaultValue,
+					custom,
+				} = Message.parseBody(input, MyBody)
+				this.name = String(name)
+				this.title = String(title)
+				this.mode = String(mode)
+				this.custom = String(custom)
+			}
 		}
-		const raw = { h: true, fmt: "md", v: 1 }
-		const parsed = Message.parseBody(raw, Body)
-		console.info(parsed)
-		// { help: true, format: "md", verbose: true }
-		assert.deepStrictEqual(console.output()[0][1], { help: true, format: "md", verbose: true })
+		class MyMessage extends Message {
+			static Body = MyBody
+			/** @type {MyBody} */
+			body
+			constructor(input = {}) {
+				super(input)
+				this.body = new MyBody(input.body ?? {})
+			}
+		}
+		const msg = new MyMessage({
+			body: { name: "JohnDoe", title: "Hello", custom: "abc" }
+		})
+		// setting the incorrect enumeration value
+		msg.body.mode = "invalid"
+		const errors = msg.validate()
+		console.info(errors)
+		// Map (3) {
+		//   'custom' => 'Too short',
+		//   'mode' => 'Enumeration must have one value',
+		//   'name' => 'Does not match pattern /^[a-z]+$/',
+		// }
+		assert.deepStrictEqual(console.output()[0][1], new Map([
+			["name", "Does not match pattern /^[a-z]+$/"],
+			["mode", "Enumeration must have one value"],
+			["custom", "Too short"],
+		]))
 	})
 
 	/**
@@ -303,7 +360,8 @@ function docs() {
 	 *   * `toObject()` – returns `{ body, time }`.
 	 *   * `toString()` – formats timestamp and body as a string.
 	 *   * `static from(input)` – instantiates from string or object.
-	 *   * `validate()` – checks body against schema (with `getErrors()`).
+	 *   * `validate()` – checks body against a static `Body` schema, returns `Map<string, string>`.
+	 *   * `getErrors()` – legacy error map, returns `Record<string, string[]>`.
 	 *
 	 * ### Chat
 	 *
@@ -315,7 +373,7 @@ function docs() {
 	 *
 	 * * **Methods**
 	 *   * `get size` – returns the chain length.
-	 *   * `get recent` – returns the last chat message in the chain.
+	 *   * `get recent` – returns the last chat message.
 	 *   * `toString()` – formats the entire chat chain.
 	 *   * `static from(input)` – builds a chat chain from array‑like input.
 	 *

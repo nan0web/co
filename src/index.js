@@ -9,12 +9,9 @@ import OutputMessage from "./OutputMessage.js"
 
 import Language from "./Language.js"
 
-/**
- * @typedef {(value: any) => boolean | Error | Error[] | Record<string, boolean | Error[]>} ValidateFn
- * @this {Message}
- */
-
 /** @typedef {import("./Message.js").MessageInput} MessageInput */
+/** @typedef {import("./Message.js").MessageBodySchema} MessageBodySchema */
+/** @typedef {import("./Message.js").ValidateFn} ValidateFn */
 
 // Remove Command exports from index (move to ui-cli)
 // Deprecated: Command, CommandError, CommandMessage, CommandOption, str2argv

@@ -1,6 +1,7 @@
 export default Message;
-export type ValidateFn = (value: any) => boolean | Error | Error[] | Record<string, boolean | Error[]>;
 export type MessageInput = import("./Message.js").MessageInput;
+export type MessageBodySchema = import("./Message.js").MessageBodySchema;
+export type ValidateFn = import("./Message.js").ValidateFn;
 import App from "./App.js";
 import Chat from "./Chat.js";
 import Contact from "./Contact.js";

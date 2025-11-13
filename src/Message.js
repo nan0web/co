@@ -8,6 +8,23 @@ import { empty, Enum, isConstructible, to as castTo } from "@nan0web/types"
  */
 
 /**
+ * @typedef {(value: any) => true | string | string[]} ValidateFn
+ */
+
+/**
+ * @typedef {Object} MessageBodySchema
+ * @property {string}     [alias]        - Short alias (single‑letter).
+ * @property {any}        [defaultValue] - Default value.
+ * @property {string}     [help]         - Human readable description.
+ * @property {Array}      [options]      - Array of possible options.
+ * @property {RegExp}     [pattern]      - Regular expression pattern for validation.
+ * @property {string}     [placeholder]  - Placeholder for usage (e.g. "<user>").
+ * @property {boolean}    [required]     - Is field required or not.
+ * @property {any}        [type]         - Data type.
+ * @property {ValidateFn} [validate]     - Validate function.
+ */
+
+/**
  * Base Message class.
  *
  * Provides a timestamped container for arbitrary payload data,
@@ -80,28 +97,13 @@ export default class Message {
 	/**
 	 * Validate body fields according to the static {@link Body} schema.
 	 *
+	 * @deprecated Moved to validate()
 	 * @returns {Record<string, string[]>} Mapping of field names to error messages.
 	 */
 	getErrors() {
-		const self = /** @type {typeof Message} */ (this.constructor)
-		const schema = new self.Body()
-		/** @type {Record<string, string[]>} */
-		const errors = {}
-		for (const [key] of Object.entries(schema)) {
-			const value = this.body?.[key]
-			const fn = self.Body[`${key}Validation`] ?? self.Body[key]?.validation ?? (() => true)
-			if (typeof fn === "function") {
-				const err = fn(value)
-				if (err === true) continue
-				if (!errors[key]) errors[key] = []
-				if (Array.isArray(err)) {
-					err.forEach(e => errors[key].push(e))
-				} else {
-					errors[key].push(err)
-				}
-			}
-		}
-		return errors
+		return Object.fromEntries(Array.from(this.validate()).map(
+			([name, err]) => [name, [err]]
+		))
 	}
 
 	/**
@@ -120,6 +122,47 @@ export default class Message {
 	 */
 	toString() {
 		return `${this.time.toISOString()} ${this.body}`
+	}
+
+	/**
+	 * @returns {Map<string, string>} A map of errors for every incorrect field, empty map if no errors.
+	 */
+	validate() {
+		const Class = /** @type {typeof Message} */ (this.constructor).Body
+		const result = new Map()
+		/** @type {Array<[string, MessageBodySchema]>} */
+		const entries = Object.entries(Class)
+		for (const [name, schema] of entries) {
+			const value = this.body[name]
+			const fn = schema?.validate
+			if ("function" === typeof fn) {
+				const ok = fn.apply(this.body, [value])
+				if (true !== ok) {
+					result.set(name, ok)
+					continue
+				}
+			}
+			if (schema?.required && !value) {
+				result.set(name, "Required")
+				continue
+			}
+			if (schema?.pattern && schema.pattern instanceof RegExp) {
+				if (!schema.pattern.test(value)) {
+					result.set(name, "Does not match pattern" + ` ${schema.pattern}`)
+					continue
+				}
+			}
+			if (schema?.options) {
+				if (!Array.isArray(schema.options)) {
+					throw new Error("Schema options must be an array of possible values")
+				}
+				if (!schema.options.includes(value)) {
+					result.set(name, "Enumeration must have one value")
+					continue
+				}
+			}
+		}
+		return result
 	}
 
 	/**
@@ -150,7 +193,9 @@ export default class Message {
 		if (typeof Body === "function" && isConstructible(Body)) {
 			template = Object.create(Body.prototype)
 		}
-		for (const [to, config] of Object.entries(Body)) {
+		/** @type {Array<[string, MessageBodySchema]>} */
+		const entries = Object.entries(Body)
+		for (const [to, config] of entries) {
 			// Resolve source key (alias if provided)
 			let srcKey = to
 			if (config.alias && input[config.alias] !== undefined) {
@@ -175,6 +220,8 @@ export default class Message {
 				type = typeof config.defaultValue
 			} else if (to in template) {
 				type = typeof template[to]
+			} else if ("pattern" in config) {
+				type = "string"
 			}
 			if (type) {
 				value = castTo(type)(value)

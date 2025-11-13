@@ -9,24 +9,28 @@ class ParseBody {
 	}
 	/** @type {boolean} */
 	help = false
+
 	static fail = {
 		help: "Filter only failed tests",
 		alias: "f"
 	}
 	/** @type {boolean} */
 	fail = false
+
 	static skip = {
 		help: "Filter only skipped tests",
 		alias: "s"
 	}
 	/** @type {boolean} */
 	skip = false
+
 	static todo = {
 		help: "Filter only todo tests",
 		alias: "d"
 	}
 	/** @type {boolean} */
 	todo = false
+
 	static format = {
 		help: "Output format: txt, md, html",
 		options: ["txt", "md", "html"],
@@ -38,6 +42,15 @@ class ParseBody {
 	 * @type {string}
 	 */
 	format
+
+	static title = {
+		help: "Title of the subject",
+		pattern: /^[a-z]+$/,
+		defaultValue: "",
+	}
+	/** @type {string} */
+	title
+
 	constructor(input = {}) {
 		const {
 			help = this.help,
@@ -71,6 +84,48 @@ class ParseMessage extends Message {
 		this.body = ParseBody.from(input.body ?? {})
 	}
 }
+
+class PatternRequiredBody {
+	/** @type {string} */
+	name
+	static name = {
+		help: "Name must be lowercase letters only",
+		pattern: /^[a-z]+$/,
+		required: true,
+		defaultValue: "",
+	}
+
+	/** @type {string} */
+	title
+	static title = {
+		help: "Title must be at least 3 characters",
+		pattern: /^.{3,}$/,
+		defaultValue: "",
+	}
+
+	/**
+	 * @param {Partial<PatternRequiredBody>}
+	 */
+	constructor(input = {}) {
+		const {
+			name = PatternRequiredBody.name.defaultValue,
+			title = PatternRequiredBody.title.defaultValue
+		} = Message.parseBody(input, PatternRequiredBody)
+		this.name = String(name)
+		this.title = String(title)
+	}
+}
+
+class PatternRequiredMessage extends Message {
+	static Body = PatternRequiredBody
+	/** @type {PatternRequiredBody} */
+	body
+	constructor(input = {}) {
+		super(input)
+		this.body = new PatternRequiredBody(input.body ?? {})
+	}
+}
+
 
 describe("Message class", () => {
 	let originalConsole
@@ -138,15 +193,19 @@ describe("Message class", () => {
 		class Body {
 			/** @type {string} */
 			name
+			static name = {
+				validate: name => name.length < 3 ? "Too short" : true
+			}
+
+			/** @type {Date} */
+			birthday
 			static birthday = {
 				/**
 				 * @param {Date} b
 				 * @returns {string | true}
 				 */
-				validation: (b) => new Date(b).getFullYear() < 1930 ? "Too old" : true,
+				validate: (b) => new Date(b).getFullYear() < 1930 ? "Too old" : true,
 			}
-			/** @type {Date} */
-			birthday
 			/**
 			 * @param {Patial<Schema>} input
 			 */
@@ -157,16 +216,6 @@ describe("Message class", () => {
 				} = input
 				this.name = String(name)
 				this.birthday = new Date(birthday)
-			}
-			/**
-			 * @param {string} name
-			 * @returns {string[] | true}
-			 */
-			static nameValidation(name) {
-				if (name.length < 3) {
-					return "Too short"
-				}
-				return true
 			}
 		}
 		class ValidMessage extends Message {
@@ -196,6 +245,7 @@ describe("Message class", () => {
 		const msg = new ParseMessage({ body: { skip: 1 } })
 		assert.deepStrictEqual({ ...msg.body }, {
 			format: "txt",
+			title: undefined,
 			fail: false,
 			help: false,
 			skip: true,
@@ -207,5 +257,69 @@ describe("Message class", () => {
 		assert.throws(() => {
 			new ParseMessage({ body: { skip: 1, format: "invalid" } })
 		}, new TypeError("Enumeration must have one value of\n- txt\n- md\n- html\nbut provided\ninvalid"))
+	})
+
+	it('should validate ParseBody fields correctly (valid data)', () => {
+		const msg = new ParseMessage()
+		const result = msg.validate()
+		assert.equal(result.size, 0, 'body should be valid')
+	})
+
+	it('should validate ParseBody fields correctly (valid data)', () => {
+		const msg = new ParseMessage({ body: { title: "123" } })
+		const result = msg.validate()
+		assert.equal(result.size, 0, 'body should be valid')
+	})
+
+	it("should report pattern mismatch error", () => {
+		const msg = new PatternRequiredMessage({ body: { name: "JohnDoe" } })
+		const result = msg.validate()
+		assert.equal(result.size, 2)
+		assert.equal(result.get("name"), "Does not match pattern /^[a-z]+$/")
+		assert.equal(result.get("title"), "Does not match pattern /^.{3,}$/")
+	})
+
+	it("should report required field missing error", () => {
+		const msg = new PatternRequiredMessage({ body: {} })
+		const result = msg.validate()
+		assert.equal(result.size, 2)
+		assert.strictEqual(result.get("name"), "Required")
+		assert.strictEqual(result.get("title"), "Does not match pattern /^.{3,}$/")
+	})
+
+	it("should report enum validation error with correct message", () => {
+		// ParseMessage constructor already throws on invalid enum, but we test validate() on a custom schema
+		class EnumBody {
+			/** @type {string} */
+			mode
+
+			static mode = {
+				help: "Mode selection",
+				options: ["auto", "manual"],
+				defaultValue: "auto",
+			}
+			constructor(input = {}) {
+				const {
+					mode = EnumBody.mode.defaultValue
+				} = Message.parseBody(input, EnumBody)
+				this.mode = String(mode)
+			}
+		}
+		class EnumMessage extends Message {
+			static Body = EnumBody
+			/** @type {EnumBody} */
+			body
+			constructor(input = {}) {
+				super(input)
+				this.body = new EnumBody(input.body ?? {})
+			}
+		}
+		const msg = new EnumMessage()
+		// Since parseBody throws on invalid enum, we need to bypass it:
+		// Directly assign invalid value to trigger validation error for test purposes
+		msg.body.mode = "invalid"
+		const res = msg.validate()
+		assert.equal(res.size, 1)
+		assert.equal(res.get("mode"), "Enumeration must have one value")
 	})
 })
