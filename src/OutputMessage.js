@@ -21,7 +21,6 @@ import Message from "./Message.js"
  * @extends Message
  */
 export default class OutputMessage extends Message {
-	/** @type {Record<string, number>} */
 	static PRIORITY = {
 		LOW: 0,
 		NORMAL: 1,
@@ -29,7 +28,6 @@ export default class OutputMessage extends Message {
 		CRITICAL: 3,
 	}
 
-	/** @type {Record<string, string>} */
 	static TYPES = {
 		TEXT: "text",
 		FORM: "form",

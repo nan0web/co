@@ -125,6 +125,7 @@ export default class Message {
 	}
 
 	/**
+	 * Validates the message's body.
 	 * @returns {Map<string, string>} A map of errors for every incorrect field, empty map if no errors.
 	 */
 	validate() {

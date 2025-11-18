@@ -18,10 +18,23 @@
  * @extends Message
  */
 export default class OutputMessage extends Message {
-    /** @type {Record<string, number>} */
-    static PRIORITY: Record<string, number>;
-    /** @type {Record<string, string>} */
-    static TYPES: Record<string, string>;
+    static PRIORITY: {
+        LOW: number;
+        NORMAL: number;
+        HIGH: number;
+        CRITICAL: number;
+    };
+    static TYPES: {
+        TEXT: string;
+        FORM: string;
+        PROGRESS: string;
+        ERROR: string;
+        INFO: string;
+        SUCCESS: string;
+        WARNING: string;
+        COMMAND: string;
+        NAVIGATION: string;
+    };
     /**
      * Create an OutputMessage from plain input.
      *

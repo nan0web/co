@@ -28,6 +28,9 @@
 		"test:docs": "node --test src/README.md.js",
 		"test:release": "node --test \"releases/**/*.test.js\"",
 		"test:status": "nan0test status --hide-name --debug",
+		"test:play": "node --test play/**/*.test.js",
+		"test:all": "npm run test && npm run test:docs && npm run test:play && npm run build",
+		"test:all1": "npm run test && npm run test:docs && npm run test:play && npm run test:status && npm run test:play",
 		"play": "node play/main.js",
 		"precommit": "npm test",
 		"prepush": "npm test",
@@ -46,12 +49,14 @@
 	"license": "ISC",
 	"packageManager": "pnpm@10.11.0",
 	"devDependencies": {
-		"@nan0web/event": "^1.0.0",
 		"@nan0web/log": "1.0.0",
 		"@nan0web/release": "1.0.1",
 		"@nan0web/test": "1.1.0",
-		"@nan0web/types": "1.2.0",
 		"@nan0web/ui-cli": "1.0.0",
 		"husky": "^9.1.7"
+	},
+	"dependencies": {
+		"@nan0web/event": "^1.0.0",
+		"@nan0web/types": "1.2.0"
 	}
 }
